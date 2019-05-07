@@ -1,0 +1,4 @@
+#!/bin/env bash
+psql -U postgres -c "CREATE USER $COMPASS_DB_USER PASSWORD '$COMPASS_DB_PASS'"
+psql -U postgres -c "CREATE DATABASE $COMPASS_DB_NAME OWNER $COMPASS_DB_USER"
+
