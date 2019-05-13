@@ -14,6 +14,7 @@ from compass_graphql.lib.db.module_data import ModuleData
 from command.lib.db.compendium.normalized_data import NormalizedData
 from command.lib.db.compendium.value_type import ValueType
 from compass_graphql.lib.utils.compendium_config import CompendiumConfig
+from compass_graphql.lib.utils.module import get_normalization_name_from_sample_set_id
 
 
 class ModuleType(DjangoObjectType):
@@ -84,9 +85,13 @@ class SaveModule(Mutation):
             if lid[0] != 'SampleSetType':
                 raise Exception("You should provide valid Sample Set ids")
             ss_ids.append(lid[1])
+        normalization = get_normalization_name_from_sample_set_id(compendium, ss_ids[0])
+        conf = CompendiumConfig(compendium)
+        norm_value_name = conf.get_normalized_value_name(normalization)
         values = NormalizedData.objects.using(compendium).filter(
             bio_feature_id__in=bf_ids,
-            normalization_design_group_id__in=ss_ids
+            normalization_design_group_id__in=ss_ids,
+            value_type__name=norm_value_name
         ).order_by('bio_feature_id', 'normalization_design_group_id').values_list('id', flat=True)
         with transaction.atomic():
             try:

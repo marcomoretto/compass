@@ -1,4 +1,7 @@
-from django.shortcuts import render
+from django.shortcuts import redirect
 
 # Create your views here.
 
+
+def vespucci(request):
+    return redirect('https://vespucci.readthedocs.io')

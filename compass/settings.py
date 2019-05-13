@@ -96,7 +96,7 @@ DATABASES = {
         'HOST': os.environ['COMPASS_DB_SERVICE'],
         'PORT': os.environ['COMPASS_DB_PORT']
     },
-    'bacillus_subtilis': {
+    'vitis_vinifera': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'expdata_bsubt',
         'USER': os.environ['COMPASS_DB_USER'],

@@ -1,0 +1,12 @@
+{
+  "full_name": "Vitis vinifera",
+  "description": "The Vitis vinifera gene expression compendium",
+  "normalizations": [
+    {
+      "name": "legacy",
+      "normalized_value_name": "M",
+      "score_class": "compass_graphql.lib.utils.score.Score",
+      "plot_class": "compass_graphql.lib.utils.plot.Plot"
+    }
+  ]
+}

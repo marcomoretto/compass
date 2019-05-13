@@ -59,8 +59,10 @@ class Query(object):
             module_proxy_class = InitModuleProxy(_plot_class)
             return module_proxy_class(compendium, info.context.user, name=kwargs['name'])
 
-
         normalization = kwargs['normalization'] if 'normalization' in kwargs else None
+        if normalization is None and "sampleset_ids" in kwargs:
+            normalization = get_normalization_name_from_sample_set_id(kwargs['compendium'],
+                                                      from_global_id(kwargs['sampleset_ids'][0])[1])
         rank = kwargs['rank'] if 'rank' in kwargs else None
 
         if "name" in kwargs:
