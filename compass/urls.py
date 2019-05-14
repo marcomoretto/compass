@@ -20,6 +20,7 @@ from compass_graphql import views
 from compass_graphql.schema import schema
 
 urlpatterns = [
+    url(r'^$', views.home, name='home'),
     url(r'^graphql', GraphQLView.as_view(graphiql=False, schema=schema)),
     url(r'^vespucci', views.vespucci, name='vespucci'),
 ]
