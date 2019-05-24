@@ -25,7 +25,7 @@ The result reflects the query structure and consists of a JSON document. Insomni
       
       import requests
 
-      url = 'http://vespucci.fmach.it/graphql'
+      url = 'http://compass.fmach.it/graphql'
       query = '''
         {
             compendia {
@@ -36,7 +36,7 @@ The result reflects the query structure and consists of a JSON document. Insomni
             }
         }
       '''
-      request = requests.post('http://127.0.0.1:8000/graphql', json={'query': query})
+      request = requests.post('http://compass.fmach.it/graphql', json={'query': query})
       print(request.json())
 
       

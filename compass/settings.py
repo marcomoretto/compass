@@ -101,7 +101,7 @@ DATABASES = {
         'NAME': 'expdata_bsubt',
         'USER': os.environ['COMPASS_DB_USER'],
         'PASSWORD': os.environ['COMPASS_DB_PASS'],
-        'HOST': 'jabberwocky', #os.environ['COMPASS_DB_SERVICE'],
+        'HOST': os.environ['COMPASS_DB_SERVICE'], #'jabberwocky', #
         'PORT': os.environ['COMPASS_DB_PORT'],
         'COMPENDIUM': True,
     }

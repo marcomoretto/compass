@@ -30,6 +30,11 @@ class SampleSetType(DjangoObjectType):
         }
         interfaces = (graphene.relay.Node,)
 
+    normalization = graphene.String()
+
+    def resolve_normalization(self, info, **kwargs):
+        return self.normalization_experiment.normalization.name
+
 
 class Query(object):
     sample_sets = DjangoFilterConnectionField(SampleSetType,

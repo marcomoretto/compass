@@ -22,8 +22,8 @@ class ScoreRankMethodsType(ObjectType):
     class Meta:
         default_resolver = dict_resolver
 
-    sample_sets = graphene.String()
-    biological_features = graphene.String()
+    sample_sets = graphene.List(graphene.String)
+    biological_features = graphene.List(graphene.String)
 
 
 class RankingType(ObjectType):
