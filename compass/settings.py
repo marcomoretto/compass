@@ -98,10 +98,10 @@ DATABASES = {
     },
     'vitis_vinifera': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'expdata_bsubt',
-        'USER': os.environ['COMPASS_DB_USER'],
-        'PASSWORD': os.environ['COMPASS_DB_PASS'],
-        'HOST': os.environ['COMPASS_DB_SERVICE'], #'jabberwocky', #
+        'NAME': 'expdata_vvini',
+        'USER': 'command', #os.environ['COMPASS_DB_USER'],
+        'PASSWORD': 'command', #os.environ['COMPASS_DB_PASS'],
+        'HOST': '172.22.0.3', #os.environ['COMPASS_DB_SERVICE'], #'jabberwocky', #
         'PORT': os.environ['COMPASS_DB_PORT'],
         'COMPENDIUM': True,
     }

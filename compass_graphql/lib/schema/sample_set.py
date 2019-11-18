@@ -41,6 +41,7 @@ class Query(object):
                                               compendium=graphene.String(required=True),
                                               normalization=graphene.String(),
                                               samples=graphene.List(of_type=graphene.ID),
+                                              experiments=graphene.List(of_type=graphene.ID),
                                               id__in=graphene.ID())
 
     def resolve_sample_sets(self, info, **kwargs):
@@ -52,6 +53,12 @@ class Query(object):
             ndg_ids = NormalizationDesignSample.objects.using(kwargs['compendium']).filter(sample_id__in=nds_ids).\
                 values_list('normalization_design_id', flat=True)
             rs = rs.filter(id__in=ndg_ids)
+        if 'experiments' in kwargs:
+            e_ids = [from_global_id(eid)[1] for eid in kwargs['experiments']]
+            ngd_ids = NormalizationDesignGroup.objects.using(kwargs['compendium']).filter(
+                normalization_experiment__experiment_id__in=e_ids
+            ).values_list('id', flat=True)
+            rs = rs.filter(id__in=ngd_ids)
         if 'id__in' in kwargs:
             rs = rs.filter(id__in=[from_global_id(i)[1] for i in kwargs['id__in'].split(',')])
         return rs

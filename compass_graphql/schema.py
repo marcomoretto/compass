@@ -20,6 +20,7 @@ import compass_graphql.lib.schema.normalization
 import compass_graphql.lib.schema.score_rank_methods
 import compass_graphql.lib.schema.plot
 import compass_graphql.lib.schema.signup
+import compass_graphql.lib.schema.annotation_pretty_print
 
 
 class Query(compass_graphql.lib.schema.data_source.Query,
@@ -31,15 +32,16 @@ class Query(compass_graphql.lib.schema.data_source.Query,
             compass_graphql.lib.schema.manage_module.Query,
             compass_graphql.lib.schema.module.Query,
             compass_graphql.lib.schema.biofeature_annotation.Query,
-            compass_graphql.lib.schema.annotation_value.Query,
+            #compass_graphql.lib.schema.annotation_value.Query,
             compass_graphql.lib.schema.compendium.Query,
-            compass_graphql.lib.schema.sample_annotation.Query,
+            #compass_graphql.lib.schema.sample_annotation.Query,
             compass_graphql.lib.schema.ontology.Query,
             compass_graphql.lib.schema.ontology_node.Query,
             compass_graphql.lib.schema.sample_set.Query,
             compass_graphql.lib.schema.normalization.Query,
             compass_graphql.lib.schema.score_rank_methods.Query,
             compass_graphql.lib.schema.plot.Query,
+            compass_graphql.lib.schema.annotation_pretty_print.Query,
             graphene.ObjectType):
     # This class will inherit from multiple Queries
     # as we begin to add more apps to our project

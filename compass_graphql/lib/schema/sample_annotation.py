@@ -3,9 +3,7 @@ from command.lib.db.compendium.sample_annotation import SampleAnnotation
 from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 
-from compass_graphql.lib.schema.annotation_value import AnnotationValueType
-
-
+'''
 class SampleAnnotationType(DjangoObjectType):
     class Meta:
 
@@ -30,3 +28,4 @@ class Query(object):
 
     def resolve_sample_annotations(self, info, **kwargs):
         return SampleAnnotation.objects.using(kwargs['compendium']).all()
+'''

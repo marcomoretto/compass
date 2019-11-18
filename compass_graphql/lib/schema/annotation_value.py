@@ -1,10 +1,9 @@
 import graphene
-from command.lib.db.compendium.annotation_value import AnnotationValue
 from command.lib.db.compendium.ontology import Ontology
 from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 
-
+'''
 class AnnotationValueType(DjangoObjectType):
     class Meta:
 
@@ -19,3 +18,4 @@ class Query(object):
 
     def resolve_annotation(self, info, **kwargs):
         return AnnotationValue.objects.using(kwargs['compendium']).all()
+'''

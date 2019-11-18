@@ -6,7 +6,7 @@ from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 from graphql_relay import from_global_id
 
-from compass_graphql.lib.schema.biofeature_annotation import BioFeatureAnnotationType
+#from compass_graphql.lib.schema.biofeature_annotation import BioFeatureAnnotationType
 
 
 class BioFeatureFieldType(DjangoObjectType):

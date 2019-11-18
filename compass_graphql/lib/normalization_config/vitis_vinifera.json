@@ -7,6 +7,12 @@
       "normalized_value_name": "M",
       "score_class": "compass_graphql.lib.utils.score.Score",
       "plot_class": "compass_graphql.lib.utils.plot.Plot"
+    },
+    {
+      "name": "tpm_sample",
+      "normalized_value_name": "TPM",
+      "score_class": "compass_graphql.lib.utils.score.Score",
+      "plot_class": "compass_graphql.lib.utils.plot.Plot"
     }
   ]
 }

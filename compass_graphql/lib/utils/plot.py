@@ -1,6 +1,7 @@
 import plotly.graph_objs as go
 import plotly.figure_factory as ff
 import numpy as np
+import pandas as pd
 from PIL.ImageEnhance import Color
 from django.db.models import Q
 from plotly import tools
@@ -64,7 +65,7 @@ class Plot:
 
         g = nx.Graph()
         g.add_nodes_from(self.get_biological_feature_names())
-        corr = np.corrcoef(self.normalized_values)
+        corr = np.array(pd.DataFrame(self.normalized_values).corr()) #np.corrcoef(self.normalized_values)
 
         nodes = list(g.nodes)
         for i in range(len(nodes)):
