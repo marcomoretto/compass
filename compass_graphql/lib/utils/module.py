@@ -1,6 +1,7 @@
 import itertools
 
 from django.conf import settings
+from django.db.models import Min, Max
 from django.db.models import Q
 from graphql_relay import from_global_id
 
@@ -43,6 +44,8 @@ def InitModuleProxy(plot_class):
             self.sample_sets = sample_sets
             self.name = name
             self.normalized_values = None
+            self.max = 2
+            self.min = -2
 
         @property
         def normalization(self):
@@ -120,11 +123,26 @@ def InitModuleProxy(plot_class):
                     conf = CompendiumConfig(self.compendium)
                     normalization_value_type = conf.get_normalized_value_name(self.normalization_name)
                     m_value_type = ValueType.objects.using(self.compendium).get(name=normalization_value_type)
-                    values = list(NormalizedData.objects.using(self.compendium).filter(
+                    #self.min = NormalizedData.objects.using(self.compendium).filter(
+                    #    value_type=m_value_type,
+                    #    normalization_design_group__normalization_experiment__normalization__name=self.normalization_name).aggregate(Min('value'))['value__min']
+                    #self.max = NormalizedData.objects.using(self.compendium).filter(
+                    #    value_type=m_value_type,
+                    #    normalization_design_group__normalization_experiment__normalization__name=self.normalization_name).aggregate(
+                    #    Max('value'))['value__max']
+                    _abs_norm_data = NormalizedData.objects.using(self.compendium).filter(
+                        value_type=m_value_type,
+                        normalization_design_group_id__in=[i for ne in Normalization.objects.using(self.compendium).get(name=self.normalization_name).normalizationexperiment_set.all() for i in ne.normalizationdesigngroup_set.all().values_list('id', flat=True)]
+                    )
+                    _min_max = _abs_norm_data.aggregate(Max('value'), Min('value'))
+                    self.min = _min_max['value__min']
+                    self.max = _min_max['value__max']
+                    _norm_data = NormalizedData.objects.using(self.compendium).filter(
                         value_type=m_value_type,
                         bio_feature_id__in=self.biological_features,
                         normalization_design_group_id__in=self.sample_sets
-                    ).order_by('bio_feature_id', 'normalization_design_group_id').values_list(
+                    )
+                    values = list(_norm_data.order_by('bio_feature_id', 'normalization_design_group_id').values_list(
                         'bio_feature_id', 'normalization_design_group_id', 'value')
                     )
                     values_ids = {(v[0], v[1]) for v in values}

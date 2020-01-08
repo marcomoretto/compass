@@ -12,8 +12,10 @@ class Cluster:
         EXPRESSION = 'expression'
         EXPERIMENT = 'experiment'
 
-    def __init__(self, data):
+    def __init__(self, data, max=None, min=None):
         self.data = data
+        self.max = np.nanmax(self.data) if not max else max
+        self.min = np.nanmin(self.data) if not min else min
 
     def _get_cluster(self, method='expression'):
         data = np.nan_to_num(self.data)

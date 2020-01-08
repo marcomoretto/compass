@@ -99,7 +99,9 @@ class Query(object):
                                     sort_by=graphene.String(),
                                     alternative_coloring=graphene.Boolean(),
                                     biofeatures_ids=graphene.List(of_type=graphene.ID),
-                                    sampleset_ids=graphene.List(of_type=graphene.ID))
+                                    sampleset_ids=graphene.List(of_type=graphene.ID),
+                                    min=graphene.Float(),
+                                    max=graphene.Float())
 
     plot_network = graphene.Field(PlotType,
                                   compendium=graphene.String(required=True),
@@ -149,8 +151,10 @@ class Query(object):
 
         sort_by = kwargs.get('sort_by', 'expression')
         alternative_coloring = bool(kwargs.get('alternative_coloring', False))
+        min = kwargs.get('min', None)
+        max = kwargs.get('max', None)
 
-        return m.get_plot(plot_type, sort_by=sort_by, alternative_coloring=alternative_coloring), plot_type
+        return m.get_plot(plot_type, sort_by=sort_by, alternative_coloring=alternative_coloring, min=min, max=max), plot_type
 
     def resolve_plot_distribution(self, info, compendium, plot_type, **kwargs):
         normalization = kwargs['normalization'] if 'normalization' in kwargs else None

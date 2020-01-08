@@ -54,7 +54,9 @@ class Plot:
         elif type == Plot.PlotType.MODULE_HEATMAP_EXPRESSION:
             sort_by = kwargs.get('sort_by', 'expression')
             alternative_coloring = bool(kwargs.get('alternative_coloring', False))
-            return self._plot_module_heatmap(sort_by=sort_by, alternative_coloring=alternative_coloring)
+            min = kwargs.get('min', None)
+            max = kwargs.get('max', None)
+            return self._plot_module_heatmap(sort_by=sort_by, alternative_coloring=alternative_coloring, min=min, max=max)
         elif type == Plot.PlotType.MODULE_COEXPRESSION_NETWORK:
             return self._plot_module_coexpression_network(**kwargs)
 
@@ -147,7 +149,7 @@ class Plot:
 
         return fig
 
-    def _plot_module_heatmap(self, sort_by='expression', alternative_coloring=False):
+    def _plot_module_heatmap(self, sort_by='expression', alternative_coloring=False, min=None, max=None):
         colorscale = [
             [0.0, 'rgb(0, 255, 0)'],
             [0.15, 'rgb(0, 255, 0)'],
@@ -164,7 +166,9 @@ class Plot:
                 [1, 'rgb(0, 255, 255)'],
             ]
 
-        cluster = Cluster(self.normalized_values)
+        min = min if min else self.min
+        max = max if max else self.max
+        cluster = Cluster(self.normalized_values, max=max, min=min)
         _data, cg, cc = cluster.get_cluster(method=sort_by)
 
         d = np.array(_data)
@@ -232,6 +236,9 @@ class Plot:
                 showlegend=False,
                 hoverinfo='text',
                 text=hovertext,
+                showscale=True,
+                zmax=cluster.max,
+                zmin=cluster.min,
             )
 
         nantrace = go.Heatmap(
@@ -255,6 +262,7 @@ class Plot:
                 showline=False,
                 ticks='',
                 showticklabels=False,
+                autorange=True,
             ),
             yaxis=dict(
                 title='Biological Features',
@@ -263,7 +271,8 @@ class Plot:
                 zeroline=False,
                 showline=False,
                 ticks='',
-                showticklabels=False
+                showticklabels=False,
+                autorange=True,
             )
         )
 
