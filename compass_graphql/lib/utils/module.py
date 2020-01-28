@@ -130,13 +130,13 @@ def InitModuleProxy(plot_class):
                     #    value_type=m_value_type,
                     #    normalization_design_group__normalization_experiment__normalization__name=self.normalization_name).aggregate(
                     #    Max('value'))['value__max']
-                    _abs_norm_data = NormalizedData.objects.using(self.compendium).filter(
-                        value_type=m_value_type,
-                        normalization_design_group_id__in=[i for ne in Normalization.objects.using(self.compendium).get(name=self.normalization_name).normalizationexperiment_set.all() for i in ne.normalizationdesigngroup_set.all().values_list('id', flat=True)]
-                    )
-                    _min_max = _abs_norm_data.aggregate(Max('value'), Min('value'))
-                    self.min = _min_max['value__min']
-                    self.max = _min_max['value__max']
+                    #_abs_norm_data = NormalizedData.objects.using(self.compendium).filter(
+                    #    value_type=m_value_type,
+                    #    normalization_design_group_id__in=[i for ne in Normalization.objects.using(self.compendium).get(name=self.normalization_name).normalizationexperiment_set.all() for i in ne.normalizationdesigngroup_set.all().values_list('id', flat=True)]
+                    #)
+                    #_min_max = _abs_norm_data.aggregate(Max('value'), Min('value'))
+                    self.min = -10 #_min_max['value__min']
+                    self.max = 10 #_min_max['value__max']
                     _norm_data = NormalizedData.objects.using(self.compendium).filter(
                         value_type=m_value_type,
                         bio_feature_id__in=self.biological_features,

@@ -78,7 +78,7 @@ class Query(object):
         _module = importlib.import_module('.'.join(score_class.split('.')[:-1]))
         _class = score_class.split('.')[-1]
         _score_class = getattr(_module, _class)
-
+        df = pd.DataFrame()
         if "biofeatures_ids" in kwargs:
             bf_ids = [from_global_id(i)[1] for i in kwargs["biofeatures_ids"]]
             values = NormalizedData.objects.using(compendium).filter(

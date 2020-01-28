@@ -130,7 +130,7 @@ class Query(object):
                         if type(s) == BNode:
                             subject = s
                         node = OntologyNode.objects.using(compendium).filter(original_id=predicate).first()
-                        if node:
+                        if node and 'rdf-syntax' not in p:
                             predicate = OntologyFormat.get_formatter(node.ontology.name).format_predicate(node.json)
                         else:
                             predicate = OntologyFormat.Formatter().format_predicate(p)
