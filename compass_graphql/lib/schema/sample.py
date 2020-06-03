@@ -1,10 +1,25 @@
 import graphene
 from command.lib.db.compendium.sample import Sample
+from django.db.models import Q
 from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 from graphql_relay import from_global_id
+from command.lib.db.compendium.normalization_experiment import NormalizationExperiment
+from command.lib.db.compendium.normalization import Normalization
 
 from command.lib.db.compendium.normalization_design_group import NormalizationDesignGroup
+
+from compass_graphql.lib.utils.compendium_config import CompendiumConfig
+
+
+class SampleConnection(graphene.Connection):
+    class Meta:
+        abstract = True
+
+    total_count = graphene.Int()
+
+    def resolve_total_count(root, info, **kwargs):
+        return root.length
 
 
 class SampleType(DjangoObjectType):
@@ -20,22 +35,39 @@ class SampleType(DjangoObjectType):
             'reporter_platform__platform_access_id': ['exact', 'icontains'],
         }
         interfaces = (graphene.relay.Node,)
+        connection_class = SampleConnection
 
 
 class Query(object):
     samples = DjangoFilterConnectionField(SampleType,
                                           compendium=graphene.String(required=True),
+                                          version=graphene.String(required=False),
+                                          database=graphene.String(required=False),
+                                          normalization=graphene.String(required=False),
                                           sample_set=graphene.ID(required=False),
-                                          annotation_ontology_id=graphene.String(required=False))
+                                          annotation_ontology_id=graphene.String(required=False),
+                                          id__in=graphene.ID())
 
     def resolve_samples(self, info, sample_set=None, annotation_ontology_id=None, **kwargs):
-        qs = None
+        cc = CompendiumConfig()
+        db = cc.get_db(
+            kwargs['compendium'],
+            kwargs.get('version', None),
+            kwargs.get('database', None)
+        )
+        n = kwargs.get('normalization', db['default_normalization'])
+        normalization = Normalization.objects.using(db['name']).get(name=n)
+        smp_ids = set()
+        for exp in NormalizationExperiment.objects.using(db['name']).filter(Q(use_experiment=True) &
+                                                                            Q(normalization=normalization)):
+            smp_ids.update(exp.experiment.sample_set.all().values_list('id', flat=True))
+        qs = Sample.objects.using(db['name']).filter(id__in=smp_ids)
+        if 'id__in' in kwargs:
+            qs = qs.filter(id__in=[from_global_id(i)[1] for i in kwargs['id__in'].split(',')])
         if sample_set:
             ss_id = from_global_id(sample_set)[1]
             qs = [s.sample for s in NormalizationDesignGroup.objects.using(kwargs['compendium']).get(id=ss_id).normalizationdesignsample_set.all()]
         if annotation_ontology_id:
             qs = [s for s in Sample.objects.using(kwargs['compendium']) if s.sampleannotation_set.filter(
                 annotation__icontains=annotation_ontology_id).count() > 0]
-        if qs:
-            return qs
-        return Sample.objects.using(kwargs['compendium']).all()
+        return qs

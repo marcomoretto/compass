@@ -2,15 +2,18 @@ import plotly.graph_objs as go
 import plotly.figure_factory as ff
 import numpy as np
 import pandas as pd
-from PIL.ImageEnhance import Color
 from django.db.models import Q
+from graphql_relay import to_global_id
 from plotly import tools
-from django.conf import settings
 import networkx as nx
 
 from command.lib.db.compendium.normalization import Normalization
 from command.lib.db.compendium.normalized_data import NormalizedData
 from command.lib.db.compendium.value_type import ValueType
+
+from command.lib.db.compendium.bio_feature import BioFeature
+
+from command.lib.db.compendium.normalization_design_group import NormalizationDesignGroup
 from compass_graphql.lib.utils.cluster import Cluster
 from compass_graphql.lib.utils.compendium_config import CompendiumConfig
 from compass_graphql.lib.utils.score import Score
@@ -22,15 +25,15 @@ class Plot:
 
         SAMPLE_SETS_MAGNITUDE_DISTRIBUTION = 'sample_sets_magnitude_distribution'
         SAMPLE_SETS_COEXPRESSION_DISTRIBUTION = 'sample_sets_coexpression_distribution'
-        BIOFEATURES_STANDARD_DEVIATION_DISTRIBUTION = 'biological_features_standard_deviation_distribution'
+        BIOFEATURES_UNCENTERED_CORRELATION_DISTRIBUTION = 'biological_features_uncentered_correlation_distribution'
         MODULE_HEATMAP_EXPRESSION = 'module_heatmap_expression'
         MODULE_COEXPRESSION_NETWORK = 'module_coexpression_network'
 
         PLOT_NAMES = {
             'distribution': [
-                SAMPLE_SETS_MAGNITUDE_DISTRIBUTION,
-                SAMPLE_SETS_COEXPRESSION_DISTRIBUTION,
-                BIOFEATURES_STANDARD_DEVIATION_DISTRIBUTION
+                (SAMPLE_SETS_MAGNITUDE_DISTRIBUTION, Score.RankMethods.MAGNITUDE),
+                (SAMPLE_SETS_COEXPRESSION_DISTRIBUTION, Score.RankMethods.COEXPRESSION),
+                (BIOFEATURES_UNCENTERED_CORRELATION_DISTRIBUTION, Score.RankMethods.UNCENTERED_CORRELATION)
             ],
             'heatmap': [
                 MODULE_HEATMAP_EXPRESSION
@@ -45,12 +48,17 @@ class Plot:
             return Plot.PlotType.PLOT_NAMES
 
     def get_plot(self, type, **kwargs):
+        rank_name = None
+        for rn in Plot.PlotType.PLOT_NAMES['distribution']:
+            if rn[0] == type:
+                rank_name = rn[1]
+                break
         if type == Plot.PlotType.SAMPLE_SETS_MAGNITUDE_DISTRIBUTION:
-            return self._plot_sample_sets_magnitude_distribution()
+            return self._plot_sample_sets_magnitude_distribution(rank_name)
         elif type == Plot.PlotType.SAMPLE_SETS_COEXPRESSION_DISTRIBUTION:
-            return self._plot_sample_sets_coexpression_distribution()
-        elif type == Plot.PlotType.BIOFEATURES_STANDARD_DEVIATION_DISTRIBUTION:
-            return self._plot_biofeatures_standard_deviation_distribution()
+            return self._plot_sample_sets_coexpression_distribution(rank_name)
+        elif type == Plot.PlotType.BIOFEATURES_UNCENTERED_CORRELATION_DISTRIBUTION:
+            return self._plot_biofeatures_centered_correlation_distribution(rank_name)
         elif type == Plot.PlotType.MODULE_HEATMAP_EXPRESSION:
             sort_by = kwargs.get('sort_by', 'expression')
             alternative_coloring = bool(kwargs.get('alternative_coloring', False))
@@ -67,7 +75,7 @@ class Plot:
 
         g = nx.Graph()
         g.add_nodes_from(self.get_biological_feature_names())
-        corr = np.array(pd.DataFrame(self.normalized_values).corr()) #np.corrcoef(self.normalized_values)
+        corr = np.array(pd.DataFrame(self.normalized_values).T.corr())
 
         nodes = list(g.nodes)
         for i in range(len(nodes)):
@@ -137,9 +145,7 @@ class Plot:
         fig = go.Figure(data=edge_traces + [node_trace],
                  layout=go.Layout(
                     title='Module coexpression network<br>'
-                          'Pearson correlation threshold: ' + str(corr_threshold), # + '<br>'
-                          #'Correlation sign: ' + sign + '<br>'
-                          #'Layout: ' + layout,
+                          'Pearson correlation threshold: ' + str(corr_threshold),
                     titlefont=dict(size=16),
                     showlegend=False,
                     hovermode='closest',
@@ -238,7 +244,7 @@ class Plot:
                 text=hovertext,
                 showscale=True,
                 zmax=cluster.max,
-                zmin=cluster.min,
+                zmin=cluster.min
             )
 
         nantrace = go.Heatmap(
@@ -279,12 +285,13 @@ class Plot:
         fig = go.Figure(data=[nantrace, trace], layout=layout)
         return fig
 
-    def _plot_biofeatures_standard_deviation_distribution(self):
-        normalization = Normalization.objects.using(self.compendium).get(name=self.normalization)
-        conf = CompendiumConfig(self.compendium)
-        normalization_value_type = conf.get_normalized_value_name(self.normalization_name)
-        value_type = ValueType.objects.using(self.compendium).get(name=normalization_value_type)
-        values = NormalizedData.objects.using(self.compendium).filter(
+    def _plot_biofeatures_centered_correlation_distribution(self, rank_name):
+        cc = CompendiumConfig()
+        normalization = Normalization.objects.using(self.db['name']).get(name=self.normalization)
+        normalization_value_type = cc.get_normalized_value_name(self.db, normalization.name)
+        value_type = ValueType.objects.using(self.db['name']).get(name=normalization_value_type)
+
+        values = NormalizedData.objects.using(self.db['name']).filter(
             Q(
                 normalization_design_group_id__in=self.sample_sets
             ) & Q(
@@ -297,11 +304,12 @@ class Plot:
             'normalization_design_group',
             'value'
         )
-        score = Score(values)
-        rank = score.rank_biological_features(Score.RankMethods.STANDARD_DEVIATION)
+        score = Score(values, self.biological_features, self.sample_sets)
+        rank = score.rank_biological_features(rank_name)
+        rank = rank.replace([np.inf, -np.inf], np.nan)
 
         x = sorted(rank.dropna().values)
-        y = [rank[rank > v].count() for v in x]
+        y = list(range(len(x)))[::-1]
 
         trace = go.Scatter(
             x=x,
@@ -314,28 +322,35 @@ class Plot:
         fig = tools.make_subplots(rows=2, cols=1)
         fig.append_trace(_fig.data[0], 2, 1)
         fig.append_trace(trace, 1, 1)
-        fig['layout'].update(title='Coexpression behavior',
+        fig['layout'].update(title='Uncentered correlation',
                              xaxis1=dict(title='cutoff',
-                                         rangemode='nonnegative',
                                          autorange=True
                                          ),
                              yaxis1=dict(title='#selected biological features'),
-                             xaxis2=dict(title='biological features standard deviation',
-                                         rangemode='nonnegative',
+                             xaxis2=dict(title='uncentered correlation',
                                          autorange=True
                                          ),
                              yaxis2=dict(title='relative frequency')
                              )
         fig.layout.showlegend = False
 
-        return fig
+        df = pd.DataFrame(rank)
+        df['gid'] = [to_global_id('BioFeatureType', i) for i in df.index]
+        df['name'] = BioFeature.objects.using(self.db['name']).filter(
+            id__in=[i for i in df.index]
+        ).values_list('name', flat=True)
+        df['type'] = ['BioFeatureType' for i in df.index]
+        df = df.set_index('gid')
+        df.columns = ['value', 'name', 'type']
 
-    def _plot_sample_sets_coexpression_distribution(self):
-        normalization = Normalization.objects.using(self.compendium).get(name=self.normalization)
-        conf = CompendiumConfig(self.compendium)
-        normalization_value_type = conf.get_normalized_value_name(self.normalization_name)
-        value_type = ValueType.objects.using(self.compendium).get(name=normalization_value_type)
-        values = NormalizedData.objects.using(self.compendium).filter(
+        return fig, df
+
+    def _plot_sample_sets_coexpression_distribution(self, rank_name):
+        cc = CompendiumConfig()
+        normalization = Normalization.objects.using(self.db['name']).get(name=self.normalization)
+        normalization_value_type = cc.get_normalized_value_name(self.db, normalization.name)
+        value_type = ValueType.objects.using(self.db['name']).get(name=normalization_value_type)
+        values = NormalizedData.objects.using(self.db['name']).filter(
             Q(
                 bio_feature__in=self.biological_features
             ) & Q(
@@ -348,11 +363,12 @@ class Plot:
             'normalization_design_group',
             'value'
         )
-        score = Score(values)
-        rank = score.rank_sample_sets(Score.RankMethods.COEXPRESSION)
+        score = Score(values, self.biological_features, self.sample_sets)
+        rank = score.rank_sample_sets(rank_name)
+        rank = rank.replace([np.inf, -np.inf], np.nan)
 
-        x = sorted(rank.dropna().values)
-        y = [rank[rank > v].count() for v in x]
+        x = sorted(rank.replace([np.inf, -np.inf], np.nan).dropna().values)
+        y = list(range(len(x)))[::-1]
 
         trace = go.Scatter(
             x=x,
@@ -360,7 +376,7 @@ class Plot:
             name=''
         )
 
-        _fig = ff.create_distplot([rank.dropna().values], [''], show_hist=False)
+        _fig = ff.create_distplot([rank.replace([np.inf, -np.inf], np.nan).dropna().values], [''], show_hist=False)
 
         fig = tools.make_subplots(rows=2, cols=1)
         fig.append_trace(_fig.data[0], 2, 1)
@@ -379,14 +395,23 @@ class Plot:
                              )
         fig.layout.showlegend = False
 
-        return fig
+        df = pd.DataFrame(rank)
+        df['gid'] = [to_global_id('SampleSetType', i) for i in df.index]
+        df['name'] = NormalizationDesignGroup.objects.using(self.db['name']).filter(
+            id__in=[i for i in df.index]
+        ).values_list('name', flat=True)
+        df['type'] = ['SampleSetType' for i in df.index]
+        df = df.set_index('gid')
+        df.columns = ['value', 'name', 'type']
 
-    def _plot_sample_sets_magnitude_distribution(self):
-        normalization = Normalization.objects.using(self.compendium).get(name=self.normalization)
-        conf = CompendiumConfig(self.compendium)
-        normalization_value_type = conf.get_normalized_value_name(self.normalization_name)
-        value_type = ValueType.objects.using(self.compendium).get(name=normalization_value_type)
-        values = NormalizedData.objects.using(self.compendium).filter(
+        return fig, df
+
+    def _plot_sample_sets_magnitude_distribution(self, rank_name):
+        cc = CompendiumConfig()
+        normalization = Normalization.objects.using(self.db['name']).get(name=self.normalization)
+        normalization_value_type = cc.get_normalized_value_name(self.db, normalization.name)
+        value_type = ValueType.objects.using(self.db['name']).get(name=normalization_value_type)
+        values = NormalizedData.objects.using(self.db['name']).filter(
             Q(
                 bio_feature__in=self.biological_features
             ) & Q(
@@ -399,11 +424,12 @@ class Plot:
             'normalization_design_group',
             'value'
         )
-        score = Score(values)
-        rank = score.rank_sample_sets(Score.RankMethods.MAGNITUDE)
+        score = Score(values, self.biological_features, self.sample_sets)
+        rank = score.rank_sample_sets(rank_name)
+        rank = rank.replace([np.inf, -np.inf], np.nan)
 
         x = sorted(rank.dropna().values)
-        y = [rank[rank > v].count() for v in x]
+        y = list(range(len(x)))[::-1]
 
         trace = go.Scatter(
             x=x,
@@ -424,4 +450,13 @@ class Plot:
                              )
         fig.layout.showlegend = False
 
-        return fig
+        df = pd.DataFrame(rank)
+        df['gid'] = [to_global_id('SampleSetType', i) for i in df.index]
+        df['name'] = NormalizationDesignGroup.objects.using(self.db['name']).filter(
+            id__in=[i for i in df.index]
+        ).values_list('name', flat=True)
+        df['type'] = ['SampleSetType' for i in df.index]
+        df = df.set_index('gid')
+        df.columns = ['value', 'name', 'type']
+
+        return fig, df

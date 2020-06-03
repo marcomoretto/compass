@@ -8,6 +8,7 @@ from graphene import ObjectType
 from graphene.types.resolver import dict_resolver
 from graphql_relay import from_global_id
 
+from compass_graphql.lib.schema.score_rank_methods import RankingType
 from compass_graphql.lib.utils.compendium_config import CompendiumConfig
 from compass_graphql.lib.utils.plot import Plot
 from compass_graphql.lib.utils.module import get_normalization_name_from_sample_set_id, InitModuleProxy
@@ -22,7 +23,7 @@ class PlotNameType(ObjectType):
     class Meta:
         default_resolver = dict_resolver
 
-    distribution = graphene.List(graphene.String)
+    distribution = graphene.List(graphene.List(graphene.String))
     heatmap = graphene.List(graphene.String)
     network = graphene.List(graphene.String)
 
@@ -79,21 +80,35 @@ class PlotType(ObjectType):
         return div
 
 
+class PlotTypeDistribution(PlotType):
+    ranking = graphene.Field(RankingType)
+
+    def resolve_ranking(self, info, **kwargs):
+        return self[2]
+
+
 class Query(object):
     plot_name = graphene.Field(PlotNameType,
                                compendium=graphene.String(required=True),
-                               normalization=graphene.String(required=True))
+                               version=graphene.String(required=False),
+                               database=graphene.String(required=False),
+                               normalization=graphene.String(required=False))
 
-    plot_distribution = graphene.Field(PlotType,
+    plot_distribution = graphene.Field(PlotTypeDistribution,
                                         compendium=graphene.String(required=True),
+                                        version=graphene.String(required=False),
+                                        database=graphene.String(required=False),
+                                        normalization=graphene.String(required=False),
                                         plot_type=graphene.String(required=True),
-                                        normalization=graphene.String(),
                                         name=graphene.String(),
                                         biofeatures_ids=graphene.List(of_type=graphene.ID),
                                         sampleset_ids=graphene.List(of_type=graphene.ID))
 
     plot_heatmap = graphene.Field(PlotType,
                                     compendium=graphene.String(required=True),
+                                    version=graphene.String(required=False),
+                                    database=graphene.String(required=False),
+                                    normalization=graphene.String(required=False),
                                     plot_type=graphene.String(required=True),
                                     name=graphene.String(),
                                     sort_by=graphene.String(),
@@ -105,6 +120,9 @@ class Query(object):
 
     plot_network = graphene.Field(PlotType,
                                   compendium=graphene.String(required=True),
+                                  version=graphene.String(required=False),
+                                  database=graphene.String(required=False),
+                                  normalization=graphene.String(required=False),
                                   plot_type=graphene.String(required=True),
                                   name=graphene.String(),
                                   biofeatures_ids=graphene.List(of_type=graphene.ID),
@@ -113,38 +131,58 @@ class Query(object):
                                   sign=graphene.String(),
                                   layout=graphene.String())
 
-    def resolve_plot_name(self, info, compendium, normalization, **kwargs):
-        conf = CompendiumConfig(compendium)
-        plot_class = conf.get_plot_class(normalization)
+    def resolve_plot_name(self, info, **kwargs):
+        cc = CompendiumConfig()
+        db = cc.get_db(
+            kwargs['compendium'],
+            kwargs.get('version', None),
+            kwargs.get('database', None)
+        )
+        n = kwargs.get('normalization', db['default_normalization'])
+        plot_class = cc.get_plot_class(db, n)
         _module = importlib.import_module('.'.join(plot_class.split('.')[:-1]))
         _class = plot_class.split('.')[-1]
         _plot_class = getattr(_module, _class)
         return _plot_class.PlotType.get_plot_names()
 
-    def resolve_plot_network(self, info, compendium, plot_type, **kwargs):
-        conf = CompendiumConfig(compendium)
-        normalization = get_normalization_name_from_sample_set_id(compendium, from_global_id(kwargs["sampleset_ids"][0])[1])
-        plot_class = conf.get_plot_class(normalization)
+    def resolve_plot_network(self, info, plot_type, **kwargs):
+        if plot_type not in Plot.PlotType.PLOT_NAMES['network']:
+            raise Exception('Incompatible plot request')
+        cc = CompendiumConfig()
+        db = cc.get_db(
+            kwargs['compendium'],
+            kwargs.get('version', None),
+            kwargs.get('database', None)
+        )
+        n = get_normalization_name_from_sample_set_id(db, from_global_id(kwargs["sampleset_ids"][0])[1])
+        plot_class = cc.get_plot_class(db, n)
         _module = importlib.import_module('.'.join(plot_class.split('.')[:-1]))
         _class = plot_class.split('.')[-1]
         _plot_class = getattr(_module, _class)
         module_proxy_class = InitModuleProxy(_plot_class)
-        m = module_proxy_class(compendium, info.context.user, normalization=normalization)
+        m = module_proxy_class(db, info.context.user, normalization=n)
         m.set_global_biofeatures(kwargs["biofeatures_ids"])
         m.set_global_samplesets(kwargs["sampleset_ids"])
         m.get_normalized_values()
 
         return m.get_plot(plot_type, **kwargs), plot_type
 
-    def resolve_plot_heatmap(self, info, compendium, plot_type, **kwargs):
-        conf = CompendiumConfig(compendium)
-        normalization = get_normalization_name_from_sample_set_id(compendium, from_global_id(kwargs["sampleset_ids"][0])[1])
-        plot_class = conf.get_plot_class(normalization)
+    def resolve_plot_heatmap(self, info, plot_type, **kwargs):
+        if plot_type not in Plot.PlotType.PLOT_NAMES['heatmap']:
+            raise Exception('Incompatible plot request')
+        cc = CompendiumConfig()
+        db = cc.get_db(
+            kwargs['compendium'],
+            kwargs.get('version', None),
+            kwargs.get('database', None)
+        )
+        n = get_normalization_name_from_sample_set_id(db, from_global_id(kwargs["sampleset_ids"][0])[1])
+        plot_class = cc.get_plot_class(db, n)
         _module = importlib.import_module('.'.join(plot_class.split('.')[:-1]))
         _class = plot_class.split('.')[-1]
         _plot_class = getattr(_module, _class)
         module_proxy_class = InitModuleProxy(_plot_class)
-        m = module_proxy_class(compendium, info.context.user, normalization=normalization)
+        m = module_proxy_class(db, info.context.user, normalization=n)
         m.set_global_biofeatures(kwargs["biofeatures_ids"])
         m.set_global_samplesets(kwargs["sampleset_ids"])
         m.get_normalized_values()
@@ -156,20 +194,27 @@ class Query(object):
 
         return m.get_plot(plot_type, sort_by=sort_by, alternative_coloring=alternative_coloring, min=min, max=max), plot_type
 
-    def resolve_plot_distribution(self, info, compendium, plot_type, **kwargs):
-        normalization = kwargs['normalization'] if 'normalization' in kwargs else None
-
-        conf = CompendiumConfig(compendium)
-        plot_class = conf.get_plot_class(normalization)
+    def resolve_plot_distribution(self, info, plot_type, **kwargs):
+        if plot_type not in [p[0] for p in Plot.PlotType.PLOT_NAMES['distribution']]:
+            raise Exception('Incompatible plot request')
+        cc = CompendiumConfig()
+        db = cc.get_db(
+            kwargs['compendium'],
+            kwargs.get('version', None),
+            kwargs.get('database', None)
+        )
+        n = kwargs.get('normalization', db['default_normalization'])
+        plot_class = cc.get_plot_class(db, n)
         _module = importlib.import_module('.'.join(plot_class.split('.')[:-1]))
         _class = plot_class.split('.')[-1]
         _plot_class = getattr(_module, _class)
         module_proxy_class = InitModuleProxy(_plot_class)
 
-        m = module_proxy_class(compendium, info.context.user, normalization=normalization)
+        m = module_proxy_class(db, info.context.user, normalization=n)
         if "biofeatures_ids" in kwargs:
             m.set_global_biofeatures(kwargs["biofeatures_ids"])
         if "sampleset_ids" in kwargs:
             m.set_global_samplesets(kwargs["sampleset_ids"])
 
-        return m.get_plot(plot_type), plot_type
+        _p = m.get_plot(plot_type)
+        return _p[0], plot_type, _p[1]

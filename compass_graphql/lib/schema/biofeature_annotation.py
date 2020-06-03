@@ -3,6 +3,9 @@ from command.lib.db.compendium.bio_feature_annotation import BioFeatureAnnotatio
 from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 
+from compass_graphql.lib.utils.compendium_config import CompendiumConfig
+
+
 class BioFeatureAnnotationType(DjangoObjectType):
     class Meta:
 
@@ -15,8 +18,17 @@ class BioFeatureAnnotationType(DjangoObjectType):
 
 
 class Query(object):
-    biofeature_annotations = DjangoFilterConnectionField(BioFeatureAnnotationType, compendium=graphene.String(required=True))
+    biofeature_annotations = DjangoFilterConnectionField(BioFeatureAnnotationType, compendium=graphene.String(required=True),
+                                                         version=graphene.String(required=False),
+                                                         database=graphene.String(required=False),
+                                                         normalization=graphene.String(required=False))
 
     def resolve_biofeature_annotations(self, info, **kwargs):
-        return BioFeatureAnnotation.objects.using(kwargs['compendium']).all()
+        cc = CompendiumConfig()
+        db = cc.get_db(
+            kwargs['compendium'],
+            kwargs.get('version', None),
+            kwargs.get('database', None)
+        )
+        return BioFeatureAnnotation.objects.using(db['name']).all()
 

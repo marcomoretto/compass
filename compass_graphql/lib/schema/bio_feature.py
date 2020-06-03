@@ -2,11 +2,24 @@ import graphene
 from command.lib.db.compendium.bio_feature import BioFeature
 from command.lib.db.compendium.bio_feature_fields import BioFeatureFields
 from command.lib.db.compendium.bio_feature_values import BioFeatureValues
+from command.lib.db.compendium.normalized_data import NormalizedData
+from django.db.models import Q
 from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 from graphql_relay import from_global_id
+import re
 
-#from compass_graphql.lib.schema.biofeature_annotation import BioFeatureAnnotationType
+from compass_graphql.lib.utils.compendium_config import CompendiumConfig
+
+
+class BioFeatureConnection(graphene.Connection):
+    class Meta:
+        abstract = True
+
+    total_count = graphene.Int()
+
+    def resolve_total_count(root, info, **kwargs):
+        return root.length
 
 
 class BioFeatureFieldType(DjangoObjectType):
@@ -38,18 +51,25 @@ class BioFeatureType(DjangoObjectType):
             'description': ['exact', 'icontains'],
         }
         interfaces = (graphene.relay.Node,)
+        connection_class = BioFeatureConnection
 
 
 class Query(object):
-    biofeatures = DjangoFilterConnectionField(BioFeatureType, compendium=graphene.String(required=True), id__in=graphene.ID())
-    biofeature_value = DjangoFilterConnectionField(BioFeatureValueType)
-    biofeature_field = DjangoFilterConnectionField(BioFeatureFieldType)
+    biofeatures = DjangoFilterConnectionField(BioFeatureType, compendium=graphene.String(required=True),
+                                              version=graphene.String(required=False),
+                                              database=graphene.String(required=False),
+                                              normalization=graphene.String(required=False),
+                                              id__in=graphene.ID())
+
 
     def resolve_biofeatures(self, info, **kwargs):
-        rs =  BioFeature.objects.using(kwargs['compendium']).all()
+        cc = CompendiumConfig()
+        db = cc.get_db(
+            kwargs['compendium'],
+            kwargs.get('version', None),
+            kwargs.get('database', None)
+        )
+        rs = BioFeature.objects.using(db['name']).all()
         if 'id__in' in kwargs:
             rs = rs.filter(id__in=[from_global_id(i)[1] for i in kwargs['id__in'].split(',')])
         return rs
-
-    def resolve_biofeature_field(self, info, **kwargs):
-        return BioFeatureFields.objects.using(kwargs['compendium']).all()

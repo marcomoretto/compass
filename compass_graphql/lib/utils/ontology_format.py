@@ -20,18 +20,30 @@ class OntologyFormat(object):
     class NCITFormatter(Formatter):
 
         def format_object(self, json_node):
-            return [('name', json_node[0]['http://www.w3.org/2000/01/rdf-schema#label'][0]['@value'])]
+            if 'http://www.w3.org/2000/01/rdf-schema#label' in json_node[0]:
+                return [('name', json_node[0]['http://www.w3.org/2000/01/rdf-schema#label'][0]['@value'])]
+            elif 'http://www.w3.org/2002/07/owl#hasExactSynonym' in json_node[0]:
+                return [('name', json_node[0]['http://www.w3.org/2002/07/owl#hasExactSynonym'][0]['@value'])]
 
         def format_predicate(self, json_node):
-            return json_node[0]['http://www.w3.org/2000/01/rdf-schema#label'][0]['@value']
+            if 'http://www.w3.org/2000/01/rdf-schema#label' in json_node[0]:
+                return json_node[0]['http://www.w3.org/2000/01/rdf-schema#label'][0]['@value']
+            elif 'http://www.w3.org/2002/07/owl#hasExactSynonym' in json_node[0]:
+                return json_node[0]['http://www.w3.org/2002/07/owl#hasExactSynonym'][0]['@value']
 
     class EdamFormatter(Formatter):
 
         def format_object(self, json_node):
-            return [('name', json_node[0]['http://www.w3.org/2000/01/rdf-schema#label'][0]['@value'])]
+            if 'http://www.w3.org/2000/01/rdf-schema#label' in json_node[0]:
+                return [('name', json_node[0]['http://www.w3.org/2000/01/rdf-schema#label'][0]['@value'])]
+            elif 'http://www.w3.org/2002/07/owl#hasDefinition' in json_node[0]:
+                return [('name', json_node[0]['http://www.w3.org/2002/07/owl#hasDefinition'][0]['@value'])]
 
         def format_predicate(self, json_node):
-            return json_node[0]['http://www.w3.org/2000/01/rdf-schema#label'][0]['@value']
+            if 'http://www.w3.org/2000/01/rdf-schema#label' in json_node[0]:
+                return json_node[0]['http://www.w3.org/2000/01/rdf-schema#label'][0]['@value']
+            elif 'http://www.w3.org/2002/07/owl#hasDefinition' in json_node[0]:
+                return json_node[0]['http://www.w3.org/2002/07/owl#hasDefinition'][0]['@value']
 
     class UOFormatter(Formatter):
 
@@ -52,19 +64,44 @@ class OntologyFormat(object):
     class BAOFormatter(Formatter):
 
         def format_object(self, json_node):
-            return [('name', json_node[0]['http://www.w3.org/2000/01/rdf-schema#label'][0]['@value'])]
+            if 'http://www.w3.org/2000/01/rdf-schema#label' in json_node[0]:
+                return [('name', json_node[0]['http://www.w3.org/2000/01/rdf-schema#label'][0]['@value'])]
 
         def format_predicate(self, json_node):
-            return json_node[0]['http://www.w3.org/2000/01/rdf-schema#label'][0]['@value']
+            if 'http://www.w3.org/2000/01/rdf-schema#label' in json_node[0]:
+                return json_node[0]['http://www.w3.org/2000/01/rdf-schema#label'][0]['@value']
 
     class EFOFormatter(Formatter):
 
         def format_object(self, json_node):
-            return [('name', json_node[0]['http://www.w3.org/2000/01/rdf-schema#label'][0]['@value'])]
+            if 'http://www.w3.org/2000/01/rdf-schema#label' in json_node[0]:
+                return [('name', json_node[0]['http://www.w3.org/2000/01/rdf-schema#label'][0]['@value'])]
+            elif 'http://www.w3.org/2002/07/owl#hasExactSynonym' in json_node[0]:
+                return [('name', json_node[0]['http://www.w3.org/2002/07/owl#hasExactSynonym'][0]['@value'])]
 
         def format_predicate(self, json_node):
-            return json_node[0]['http://www.w3.org/2000/01/rdf-schema#label'][0]['@value']
+            if 'http://www.w3.org/2000/01/rdf-schema#label' in json_node[0]:
+                return json_node[0]['http://www.w3.org/2000/01/rdf-schema#label'][0]['@value']
+            elif 'http://www.w3.org/2002/07/owl#hasExactSynonym' in json_node[0]:
+                return json_node[0]['http://www.w3.org/2002/07/owl#hasExactSynonym'][0]['@value']
 
+    class PTFormatter(EFOFormatter):
+        pass
+
+    class PATOFormatter(EFOFormatter):
+        pass
+
+    class TaxonFormatter(EFOFormatter):
+        pass
+
+    class EnvironmenFormatter(EFOFormatter):
+        pass
+
+    class PECOFormatter(EFOFormatter):
+        pass
+
+    class AgroFormatter(EFOFormatter):
+        pass
 
     class GOFormatter(Formatter):
 
@@ -79,7 +116,13 @@ class OntologyFormat(object):
         'Plant ontology': POFormatter,
         'Bioassay ontology': BAOFormatter,
         'Bao properties': BAOFormatter,
-        'Experimental factor ontology': EFOFormatter
+        'Experimental factor ontology': EFOFormatter,
+        'Plant trait': PTFormatter,
+        'Phenotype and trait': PATOFormatter,
+        'Ncbi taxon': TaxonFormatter,
+        'Environment': EnvironmenFormatter,
+        'Plant experimental conditions': PECOFormatter,
+        'Agronomy': AgroFormatter
     }
 
     @staticmethod

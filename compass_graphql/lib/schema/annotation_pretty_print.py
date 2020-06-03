@@ -89,25 +89,35 @@ class AnnotationPrettyPrintType(ObjectType):
 class Query(object):
     annotation_pretty_print = graphene.Field(AnnotationPrettyPrintType,
                                              compendium=graphene.String(required=True),
+                                             version=graphene.String(required=False),
+                                             database=graphene.String(required=False),
+                                             normalization=graphene.String(required=False),
                                              ids=graphene.List(required=True, of_type=graphene.ID)
                                              )
 
-    def resolve_annotation_pretty_print(self, info, compendium, ids, **kwargs):
+    def resolve_annotation_pretty_print(self, info, ids, **kwargs):
+        cc = CompendiumConfig()
+        db = cc.get_db(
+            kwargs['compendium'],
+            kwargs.get('version', None),
+            kwargs.get('database', None)
+        )
+        n = kwargs.get('normalization', db['default_normalization'])
         triples = []
         for aid in ids:
             _class, _id = from_global_id(aid)
             if _class == 'BioFeatureType':
                 _module = importlib.import_module('command.lib.db.compendium.bio_feature')
                 _bf_class = getattr(_module, 'BioFeature')
-                for ann in _bf_class.objects.using(compendium).get(id=_id).biofeatureannotation_set.all():
+                for ann in _bf_class.objects.using(db['name']).get(id=_id).biofeatureannotation_set.all():
                     g = Graph().parse(data=json.dumps(ann.annotation), format='json-ld')
                     for s, p, o in g:
                         predicate = (str(p).split('/') or None)[-1]
                         obj = (str(o).split('/') or None)[-1]
-                        node = OntologyNode.objects.using(compendium).filter(original_id=predicate).first()
+                        node = OntologyNode.objects.using(db['name']).filter(original_id=predicate).first()
                         if node:
                             predicate = OntologyFormat.get_formatter(node.ontology.name).format_predicate(node.json)
-                        node = OntologyNode.objects.using(compendium).filter(original_id=obj).first()
+                        node = OntologyNode.objects.using(db['name']).filter(original_id=obj).first()
                         if node:
                             for k, v in OntologyFormat.get_formatter(node.ontology.name).format_object(node.json):
                                 triples.append(
@@ -119,7 +129,7 @@ class Query(object):
             elif _class == 'SampleType':
                 _module = importlib.import_module('command.lib.db.compendium.sample')
                 _bf_class = getattr(_module, 'Sample')
-                for ann in _bf_class.objects.using(compendium).get(id=_id).sampleannotation_set.all():
+                for ann in _bf_class.objects.using(db['name']).get(id=_id).sampleannotation_set.all():
                     g = Graph().parse(data=json.dumps(ann.annotation), format='json-ld')
                     for s, p, o in g:
                         subject = ann.sample.sample_name
@@ -129,12 +139,12 @@ class Query(object):
                         obj = (str(obj).split('#') or None)[-1]
                         if type(s) == BNode:
                             subject = s
-                        node = OntologyNode.objects.using(compendium).filter(original_id=predicate).first()
+                        node = OntologyNode.objects.using(db['name']).filter(original_id=predicate).first()
                         if node and 'rdf-syntax' not in p:
                             predicate = OntologyFormat.get_formatter(node.ontology.name).format_predicate(node.json)
                         else:
                             predicate = OntologyFormat.Formatter().format_predicate(p)
-                        node = OntologyNode.objects.using(compendium).filter(original_id=obj).first()
+                        node = OntologyNode.objects.using(db['name']).filter(original_id=obj).first()
                         if node:
                             for k, v in OntologyFormat.get_formatter(node.ontology.name).format_object(node.json):
                                 triples.append(

@@ -6,6 +6,8 @@ from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 import networkx
 
+from compass_graphql.lib.utils.compendium_config import CompendiumConfig
+
 
 class OntologyType(DjangoObjectType):
     class Meta:
@@ -22,7 +24,7 @@ class OntologyType(DjangoObjectType):
         compendium = self._state.db
         g = networkx.DiGraph()
         g.add_nodes_from(list(
-            OntologyNode.objects.using(compendium).filter(ontology=self).values_list('original_id', 'json'))
+            OntologyNode.objects.using(compendium).filter(ontology=self).values_list('original_id'))
         )
         g.add_edges_from(list(
             OntologyEdge.objects.using(compendium).filter(ontology=self).values_list(
@@ -32,7 +34,16 @@ class OntologyType(DjangoObjectType):
 
 
 class Query(object):
-    ontology = DjangoFilterConnectionField(OntologyType, compendium=graphene.String(required=True))
+    ontology = DjangoFilterConnectionField(OntologyType, compendium=graphene.String(required=True),
+                                           version=graphene.String(required=False),
+                                           database=graphene.String(required=False),
+                                           normalization=graphene.String(required=False))
 
     def resolve_ontology(self, info, **kwargs):
-        return Ontology.objects.using(kwargs['compendium']).all()
+        cc = CompendiumConfig()
+        db = cc.get_db(
+            kwargs['compendium'],
+            kwargs.get('version', None),
+            kwargs.get('database', None)
+        )
+        return Ontology.objects.using(db['name']).all()
