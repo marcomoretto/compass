@@ -1,21 +1,30 @@
 How To
 ======
 
-This section contains several examples of GraphQL queries in order to perform main operations on a COMPASS GraphQL endpoint. For each query there might be additional parameters. A good way to have the list of all available parameters is to use a good GraphQL client like `Insomnia <https://insomnia.rest/>`_ and use the autocompletion.
+This section contains several examples of GraphQL queries in order to perform main operations on a COMPASS GraphQL endpoint. For each query there might be additional parameters. **An easy way to have the list of all available parameters is to use the GraphiQL client** and use the autocompletion (ALT + SPACEBAR).
 
 GET available compendia
 -----------------------
 
 .. code-block:: javascript
 
-   {
-    compendia {
-        name,
-        fullName,
-        description,
-        normalization
-    }
-   }
+	{
+	  compendia {
+		name,
+		fullName,
+		description,
+		defaultVersion
+		versions {
+		  versionNumber,
+		  versionAlias,
+		  defaultDatabase,
+		  databases {
+			name,
+			normalizations
+		  }
+		}
+	  }
+	}
 
 
 GET compendium data sources
@@ -24,7 +33,7 @@ GET compendium data sources
 .. code-block:: javascript
 
     {
-      dataSources(compendium: "vitis_vinifera") {
+      dataSources(compendium: "vespucci") {
         edges {
           node {
             id,
@@ -41,7 +50,7 @@ GET platform information
 .. code-block:: javascript
 
     {
-      platforms(compendium:"vitis_vinifera") {
+      platforms(compendium:"vespucci") {
         edges {
           node {
             platformAccessId,
@@ -65,7 +74,7 @@ GET platform types
 .. code-block:: javascript
 
     {
-      platformTypes(compendium:"vitis_vinifera") {
+      platformTypes(compendium:"vespucci") {
         edges {
           node {
             id,
@@ -83,7 +92,7 @@ GET experiments information
 .. code-block:: javascript
 
     {
-      experiments(compendium:"vitis_vinifera") {
+      experiments(compendium:"vespucci") {
         edges {
           node {
             organism,
@@ -101,26 +110,22 @@ GET sample annotation
 .. code-block:: javascript
 
     {
-      sampleAnnotations(compendium: "vitis_vinifera", first: 10) {
+      sampleAnnotations(compendium: "vespucci", first: 10) {
         edges {
           node {
             sample {
               id,
               sampleName
             },
-            annotation {
-              ontologyNode {
-                originalId,
-                ontology {
-                  name
-                }
-              }
-              value
-            }
+            annotation
           }
         }
       }
     }
+
+.. note::
+
+    The returned annotation is the JSON-LD format of RDF annotation.
 
 
 GET biological feature annotations
@@ -128,24 +133,19 @@ GET biological feature annotations
 
 .. code-block:: javascript
 
-    {
-     biofeatureAnnotations(compendium:"vitis_vinifera",
-        bioFeature_Name:"VIT_00s0332g00060",
-      annotationValue_OntologyNode_Ontology_Name:"Gene ontology") {
-        edges {
-          node {
-            annotationValue {
-              ontologyNode {
-                originalId,
-                ontology {
-                    name
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+	{
+	  biofeatureAnnotations(compendium: "vespucci", bioFeature_Name: "VIT_00s0332g00060") {
+		edges {
+		  node {
+			annotation
+		  }
+		}
+	  }
+	}
+
+.. note::
+
+    The returned annotation is the JSON-LD format of RDF annotation.
 
 
 GET ontology structure
@@ -154,7 +154,7 @@ GET ontology structure
 .. code-block:: javascript
 
     {
-     ontology(compendium:"vitis_vinifera", name:"Gene ontology") {
+     ontology(compendium:"vespucci", name:"Gene ontology") {
       edges {
         node {
           structure
@@ -173,20 +173,7 @@ GET samples by annotation terms
 
 .. code-block:: javascript
 
-    {
-      sampleAnnotations(compendium:"vitis_vinifera", annotationValue_OntologyNode_OriginalId:"GROWTH.GREENHOUSE") {
-        edges {
-          node {
-            sample {
-              sampleName,
-              experiment {
-                experimentAccessId
-              }
-            }
-          }
-        }
-      }
-    }
+    <TODO>
 
 
 GET samples by experiment access id
@@ -195,7 +182,7 @@ GET samples by experiment access id
 .. code-block:: javascript
 
     {
-     samples(compendium:"vitis_vinifera", experiment_ExperimentAccessId:"GSE1620") {
+     samples(compendium:"vespucci", experiment_ExperimentAccessId:"GSE54347") {
       edges {
         node {
           sampleName,
@@ -212,7 +199,7 @@ GET sample by access id
 .. code-block:: javascript
 
     {
-     samples(compendium:"vitis_vinifera", sampleName_Icontains:"GSM786264") {
+     samples(compendium:"vespucci", sampleName_Icontains:"GSM1313535") {
       edges {
         node {
           sampleName,
@@ -230,7 +217,7 @@ GET sample set by name
 
 
     {
-     sampleSets(compendium:"vitis_vinifera", name:"GSM786264.ch1-vs-GSM786258.ch1") {
+     sampleSets(compendium:"vespucci", name:"GSE27180_48hours-1-vs-GSE27180_0h-2") {
       edges {
         node {
           id,
@@ -247,7 +234,7 @@ GET sample set by sample id
 .. code-block:: javascript
 
     {
-     sampleSets(compendium:"vitis_vinifera", samples:["U2FtcGxlVHlwZTo0MDg2Ng=="]) {
+     sampleSets(compendium:"vespucci", samples:["U2FtcGxlVHlwZTox"]) {
       edges {
         node {
           id,
@@ -264,7 +251,7 @@ GET biological feature by name
 .. code-block:: javascript
 
     {
-      biofeatures(compendium:"vitis_vinifera", name:"VIT_00s0332g00060") {
+      biofeatures(compendium:"vespucci", name:"VIT_00s0332g00060") {
         edges {
           node {
             name,
@@ -286,17 +273,7 @@ GET biological feature by annotation terms
 
 .. code-block:: javascript
 
-    {
-     biofeatureAnnotations(compendium:"vitis_vinifera",annotationValue_OntologyNode_OriginalId:"GO:0006260") {
-      edges {
-        node {
-            bioFeature {
-            name
-          }
-        }
-      }
-     }
-    }
+    <TODO>
 
 
 CREATE MODULE with biological features and sample sets
@@ -304,153 +281,33 @@ CREATE MODULE with biological features and sample sets
 
 .. code-block:: javascript
 
-    {
-      modules(compendium:"vitis_vinifera",
-        biofeaturesIds:["QmlvRmVhdHVyZVR5cGU6NTIzMjU=","QmlvRmVhdHVyZVR5cGU6NTIzMjY="],
-        samplesetIds:["U2FtcGxlU2V0VHlwZToxMjYw","U2FtcGxlU2V0VHlwZToxMjYx","U2FtcGxlU2V0VHlwZToxMjYy"]) {
-        normalizedValues,
-        sampleSets {
-          edges {
-            node {
-              id,
-              name,
-              normalizationdesignsampleSet {
-                edges {
-                  node {
-                    sample {
-                      sampleName
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-        biofeatures {
-          edges {
-            node {
-              id,
-              name
-            }
-          }
-        }
-      }
-    }
-
-
-GET list of saved modules (login required)
-------------------------------------------
-
-.. code-block:: javascript
-
-    {
-      searchModules(compendium:"vitis_vinifera") {
-        edges {
-          node {
-            id,
-            name
-          }
-        }
-      }
-    }
-
-
-SAVE module (login required)
-----------------------------
-
-.. code-block:: javascript
-
-    mutation {
-      saveModule(compendium:"vitis_vinifera", name:"test", biofeaturesIds:["QmlvRmVhdHVyZVR5cGU6NTIzMjU=","QmlvRmVhdHVyZVR5cGU6NTIzMjY="],
-        samplesetIds:["U2FtcGxlU2V0VHlwZToxMjYw","U2FtcGxlU2V0VHlwZToxMjYx","U2FtcGxlU2V0VHlwZToxMjYy"]) {
-        ok
-      }
-    }
-
-
-UPDATE module name (login required)
------------------------------------
-
-.. code-block:: javascript
-
-    mutation {
-      updateModuleName(compendium:"vitis_vinifera", oldName:"test", newName:"test1") {
-        ok
-      }
-    }
-
-
-DELETE saved module (login required)
-------------------------------------
-
-.. code-block:: javascript
-
-    mutation {
-      deleteModule(compendium:"vitis_vinifera", name:"test1") {
-        ok
-      }
-    }
-
-
-GET saved module values (login required)
-----------------------------------------
-
-.. code-block:: javascript
-
-    {
-      modules(compendium:"vitis_vinifera",
-        name:"test") {
-        normalizedValues,
-      }
-    }
-
-
-GET saved module's biological features (login required)
--------------------------------------------------------
-
-.. code-block:: javascript
-
-     {
-      modules(compendium:"vitis_vinifera",
-        name:"test") {
-        biofeatures {
-          edges {
-            node {
-              id,
-              name
-            }
-          }
-        }
-      }
-    }
-
-
-GET saved module's sample sets (login required)
------------------------------------------------
-
-.. code-block:: javascript
-
-    {
-      modules(compendium:"vitis_vinifera",
-        name:"test") {
-        sampleSets {
-          edges {
-            node {
-              id,
-              name,
-              normalizationdesignsampleSet {
-                edges {
-                  node {
-                    sample {
-                      sampleName
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-
+	{
+	  modules(compendium: "vespucci", version:"legacy", biofeaturesIds: ["QmlvRmVhdHVyZVR5cGU6MQ==","QmlvRmVhdHVyZVR5cGU6Mg=="], samplesetIds: ["U2FtcGxlU2V0VHlwZToxMjYw", "U2FtcGxlU2V0VHlwZToxMjYx", "U2FtcGxlU2V0VHlwZToxMjYy"]) {
+		normalizedValues
+		sampleSets {
+		  edges {
+			node {
+			  id
+			  name
+			  normalizationdesignsampleSet {
+				edges {
+				  node {
+					sample {
+					  sampleName
+					}
+				  }
+				}
+			  }
+			}
+		  }
+		}
+		biofeatures {
+		  edges {
+			node {
+			  id
+			  name
+			}
+		  }
+		}
+	  }
+	}

@@ -26,13 +26,20 @@ Simple query using the GraphiQL client
       url = 'http://compass.fmach.it/graphql'
       query = '''
         {
-            compendia {
-                name,
-                fullName,
-                description,
-                normalization
-            }
-        }
+		  compendia {
+			name,
+			fullName,
+			description,
+			versions {
+			  versionAlias,
+			  versionNumber,
+			  databases {
+				name,
+				normalizations
+			  }
+			}
+		  }
+		}
       '''
       request = requests.post('http://compass.fmach.it/graphql', json={'query': query})
       print(request.json())
