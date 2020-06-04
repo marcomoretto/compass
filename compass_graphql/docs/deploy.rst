@@ -33,12 +33,7 @@ Assuming that you have `Docker Compose correctly installed <https://docs.docker.
    # 4. create database schema
    docker-compose exec web python manage.py migrate
 
-   <TODO>
-
-That's it! You should be able to point your browser to http://localhost/graphql and see something like the following:
-  
-  - <TODO>
-
+That's it! You should be able to point your browser to http://localhost/graphql and see the GraphiQL interface.
 
 
 Manual Deploy
@@ -51,8 +46,6 @@ One easy way to understand what you need to do to manually deploy COMPASS is to 
 
 In a nutshell, after having installed and configured `Nginx <https://www.nginx.com/>`_ (or another web-server to run Django applications), `PostgreSQL <https://www.postgresql.org/>`_
 
-<TODO>
-
 .. code-block:: bash
 
     pip3 install --upgrade pip
@@ -63,8 +56,6 @@ Now you should be ready configure Django (check the `documentation for details <
 .. code-block:: bash
 
    python manage.py migrate
-
-   <TODO>
 
 .. Note::
 

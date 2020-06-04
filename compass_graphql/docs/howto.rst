@@ -168,12 +168,28 @@ GET ontology structure
     The returned structure is a JSON created using the `networkx Python package <https://networkx.github.io/documentation/latest/reference/readwrite/generated/networkx.readwrite.json_graph.node_link_data.html>`_
 
 
-GET samples by annotation terms
+GET samples annotation triples
 -------------------------------
 
 .. code-block:: javascript
 
-    <TODO>
+	{
+	  annotationPrettyPrint(compendium:"vespucci", ids:"QmlvRmVhdHVyZVR5cGU6MQ==") {
+		rdfTriples
+	  }
+	}
+
+
+GET sample via SPARQL query
+---------------------------
+
+.. code-block:: javascript
+
+	{
+	  sparql(compendium:"vespucci", target:"sample", query:"SELECT ?s ?p ?o WHERE { ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://purl.obolibrary.org/obo/NCIT_C19157> . ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://purl.obolibrary.org/obo/PO_0009010>}") {
+		rdfTriples
+	  }
+	}
 
 
 GET samples by experiment access id
@@ -268,12 +284,17 @@ GET biological feature by name
     }
 
 
-GET biological feature by annotation terms
+GET biological feature annotation triples
 ------------------------------------------
 
 .. code-block:: javascript
 
-    <TODO>
+	{
+	  annotationPrettyPrint(compendium:"vespucci", ids:"QmlvRmVhdHVyZVR5cGU6Mg==") {
+		rdfTriples
+	  }
+	}
+
 
 
 CREATE MODULE with biological features and sample sets
@@ -309,5 +330,95 @@ CREATE MODULE with biological features and sample sets
 			}
 		  }
 		}
+	  }
+	}
+
+
+GET available PLOT methods
+--------------------------
+
+.. code-block:: javascript
+
+	{
+	  plotName(compendium:"vespucci") {
+		distribution,
+		heatmap,
+		network
+	  }
+	}
+
+
+PLOT DISTRIBUTION of coexpressed sample sets GIVEN biological features
+-----------------------------------------------------------------
+
+.. code-block:: javascript
+
+	{
+	  plotDistribution(compendium:"vespucci", version:"legacy", plotType:"sample_sets_coexpression_distribution", biofeaturesIds: ["QmlvRmVhdHVyZVR5cGU6MQ==","QmlvRmVhdHVyZVR5cGU6Mg=="]) {
+		html
+	  }
+	}
+
+PLOT HEATMAP GIVEN a module
+-----------------------------------------------------------------
+
+.. code-block:: javascript
+
+	{
+	  plotHeatmap(compendium: "vespucci", version: "legacy", plotType: "module_heatmap_expression", biofeaturesIds: ["QmlvRmVhdHVyZVR5cGU6MQ==", "QmlvRmVhdHVyZVR5cGU6Mg==", "QmlvRmVhdHVyZVR5cGU6Mw==", "QmlvRmVhdHVyZVR5cGU6NA==", "QmlvRmVhdHVyZVR5cGU6NQ=="], samplesetIds: ["U2FtcGxlU2V0VHlwZToxNDg=", "U2FtcGxlU2V0VHlwZToxNDk=", "U2FtcGxlU2V0VHlwZToxNTA=", "U2FtcGxlU2V0VHlwZToxNTE=", "U2FtcGxlU2V0VHlwZToxNTI="]) {
+		html
+	  }
+	}
+
+PLOT NETWORK of coexpression GIVEN a module
+-----------------------------------------------------------------
+
+.. code-block:: javascript
+
+	{
+	  plotNetwork(compendium: "vespucci", version: "legacy", plotType: "module_coexpression_network", biofeaturesIds: ["QmlvRmVhdHVyZVR5cGU6MQ==", "QmlvRmVhdHVyZVR5cGU6Mg==", "QmlvRmVhdHVyZVR5cGU6Mw==", "QmlvRmVhdHVyZVR5cGU6NA==", "QmlvRmVhdHVyZVR5cGU6NQ=="], samplesetIds: ["U2FtcGxlU2V0VHlwZToxNDg=", "U2FtcGxlU2V0VHlwZToxNDk=", "U2FtcGxlU2V0VHlwZToxNTA=", "U2FtcGxlU2V0VHlwZToxNTE=", "U2FtcGxlU2V0VHlwZToxNTI="]) {
+		html
+	  }
+	}
+
+GET THE RANKING methods for sample sets and biological features
+-----------------------------------------------------------------
+
+.. code-block:: javascript
+
+	{
+	  scoreRankMethods(compendium:"vespucci") {
+		sampleSets,
+		biologicalFeatures
+	  }
+	}
+
+GET THE available NORMALIZATION methods for a compendium version
+-----------------------------------------------------------------
+
+.. code-block:: javascript
+
+	{
+	  normalizations(compendium:"vespucci", version:"latest") {
+		edges {
+		  node {
+			name,
+			date
+		  }
+		}
+	  }
+	}
+
+RANKS sample sets or biological features GIVEN biological features or sample sets respectively
+-----------------------------------------------------------------
+
+.. code-block:: javascript
+
+	{
+	  ranking(compendium:"vespucci", version:"legacy", rankTarget:"samplesets", rank: "magnitude", biofeaturesIds: ["QmlvRmVhdHVyZVR5cGU6MQ==", "QmlvRmVhdHVyZVR5cGU6Mg==", "QmlvRmVhdHVyZVR5cGU6Mw==", "QmlvRmVhdHVyZVR5cGU6NA==", "QmlvRmVhdHVyZVR5cGU6NQ=="]) {
+		id,
+		name,
+		type,
+		value
 	  }
 	}
