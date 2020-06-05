@@ -15,6 +15,10 @@ COMPASS is meant to be the barebone interface on top of a `compendium database <
 
    `VESPUCCI <https://vespucci.readthedocs.io>`_, the *Vitis vinifera*  cross-platform expression compendium, is accessible using its COMPASS frontend. Check out the `use cases! <https://vespucci.readthedocs.io/en/latest/use_cases.html>`_
 
+.. note::
+
+   `DashCOMPASS <https://github.com/marcomoretto/dashcompass>`_ is a `Dash <https://dash.plotly.com/introduction>`_ applications built on top of COMPASS using `pyCOMPASS <https://pycompass.readthedocs.io>`_ meant to showcase how to build higher level tools.  A running instance is hosted on `Heroku <https://dashcompass.herokuapp.com/>`_.
+
 .. toctree::
    :maxdepth: 2
    :caption: Table of Contents
