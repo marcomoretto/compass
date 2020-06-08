@@ -4,6 +4,7 @@ from django.conf import settings
 import os
 
 import graphene
+from django.db.models import Case, When
 from graphene import ObjectType
 from graphene.types.resolver import dict_resolver
 from graphql_relay import from_global_id
@@ -208,9 +209,13 @@ class Query(object):
         max = kwargs.get('max', None)
 
         _p = m.get_plot(plot_type, sort_by=sort_by, alternative_coloring=alternative_coloring, min=min, max=max)
-        return _p[0], plot_type,\
-               BioFeature.objects.using(db['name']).filter(id__in=[m.biological_features[i] for i in _p[1]]), \
-               NormalizationDesignGroup.objects.using(db['name']).filter(id__in=[m.sample_sets[i] for i in _p[2]])
+        bf = [m.biological_features[i] for i in _p[1]]
+        bf_preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(bf)])
+        bf_qs = BioFeature.objects.using(db['name']).filter(pk__in=bf).order_by(bf_preserved)
+        ss = [m.sample_sets[i] for i in _p[2]]
+        ss_preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ss)])
+        ss_qs = NormalizationDesignGroup.objects.using(db['name']).filter(pk__in=ss).order_by(ss_preserved)
+        return _p[0], plot_type, bf_qs, ss_qs
 
     def resolve_plot_distribution(self, info, plot_type, **kwargs):
         if plot_type not in [p[0] for p in Plot.PlotType.PLOT_NAMES['distribution']]:
