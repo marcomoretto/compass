@@ -8,8 +8,12 @@ from graphene import ObjectType
 from graphene.types.resolver import dict_resolver
 from graphql_relay import from_global_id
 
+from command.lib.db.compendium.bio_feature import BioFeature
+from compass_graphql.lib.schema.bio_feature import BioFeatureType
+from compass_graphql.lib.schema.sample_set import SampleSetType
 from compass_graphql.lib.schema.score_rank_methods import RankingType
 from compass_graphql.lib.utils.compendium_config import CompendiumConfig
+from command.lib.db.compendium.normalization_design_group import NormalizationDesignGroup
 from compass_graphql.lib.utils.plot import Plot
 from compass_graphql.lib.utils.module import get_normalization_name_from_sample_set_id, InitModuleProxy
 
@@ -87,6 +91,17 @@ class PlotTypeDistribution(PlotType):
         return self[2]
 
 
+class PlotTypeHeatmap(PlotType):
+    sorted_biofeatures = graphene.List(BioFeatureType)
+    sorted_samplesets = graphene.List(SampleSetType)
+
+    def resolve_sorted_biofeatures(self, info, **kwargs):
+        return self[2]
+
+    def resolve_sorted_samplesets(self, info, **kwargs):
+        return self[3]
+
+
 class Query(object):
     plot_name = graphene.Field(PlotNameType,
                                compendium=graphene.String(required=True),
@@ -104,7 +119,7 @@ class Query(object):
                                         biofeatures_ids=graphene.List(of_type=graphene.ID),
                                         sampleset_ids=graphene.List(of_type=graphene.ID))
 
-    plot_heatmap = graphene.Field(PlotType,
+    plot_heatmap = graphene.Field(PlotTypeHeatmap,
                                     compendium=graphene.String(required=True),
                                     version=graphene.String(required=False),
                                     database=graphene.String(required=False),
@@ -192,7 +207,10 @@ class Query(object):
         min = kwargs.get('min', None)
         max = kwargs.get('max', None)
 
-        return m.get_plot(plot_type, sort_by=sort_by, alternative_coloring=alternative_coloring, min=min, max=max), plot_type
+        _p = m.get_plot(plot_type, sort_by=sort_by, alternative_coloring=alternative_coloring, min=min, max=max)
+        return _p[0], plot_type,\
+               BioFeature.objects.using(db['name']).filter(id__in=[m.biological_features[i] for i in _p[1]]), \
+               NormalizationDesignGroup.objects.using(db['name']).filter(id__in=[m.sample_sets[i] for i in _p[2]])
 
     def resolve_plot_distribution(self, info, plot_type, **kwargs):
         if plot_type not in [p[0] for p in Plot.PlotType.PLOT_NAMES['distribution']]:

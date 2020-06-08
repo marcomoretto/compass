@@ -175,7 +175,7 @@ class Plot:
         min = min if min else self.min
         max = max if max else self.max
         cluster = Cluster(self.normalized_values, max=max, min=min)
-        _data, cg, cc = cluster.get_cluster(method=sort_by)
+        _data, cg, cc, g, c = cluster.get_cluster(method=sort_by)
 
         d = np.array(_data)
         d = np.isnan(d).astype(int)
@@ -184,14 +184,14 @@ class Plot:
         ss_names = self.get_sample_set_names()
 
         hovertext = list()
-        for yi, yy in enumerate(bf_names):
+        for yi, yy in enumerate(g):
             hovertext.append(list())
-            for xi, xx in enumerate(ss_names):
+            for xi, xx in enumerate(c):
                 hovertext[-1].append('Sample set: {}<br /> ' \
                                      'Bio feature: {}<br /> ' \
                                      'Value: {} <br />' \
                                      'Sample set annotation: {} <br />' \
-                                     'Bio feature annotation: {}'.format(xx, yy, _data[yi][xi], 'anno', 'anno'))
+                                     'Bio feature annotation: {}'.format(ss_names[xx], bf_names[yy], _data[yi][xi], 'anno', 'anno'))
 
         cell_ratio = _data.shape[0] / _data.shape[1]
 
@@ -283,7 +283,7 @@ class Plot:
         )
 
         fig = go.Figure(data=[nantrace, trace], layout=layout)
-        return fig
+        return fig, g, c
 
     def _plot_biofeatures_centered_correlation_distribution(self, rank_name):
         cc = CompendiumConfig()

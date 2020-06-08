@@ -30,12 +30,12 @@ def InitModuleProxy(plot_class):
 
         MAX_INFER_SAMPLE_SET = 300
 
-        def __init__(self, db, user, normalization=None, biological_features=[], sample_sets=[]):
+        def __init__(self, db, user, normalization=None, biological_features=tuple(), sample_sets=tuple()):
             self.db = db
             self.user = user
             self.normalization_name = normalization
-            self.biological_features = biological_features
-            self.sample_sets = sample_sets
+            self.biological_features = tuple(biological_features)
+            self.sample_sets = tuple(sample_sets)
             self.normalized_values = None
             self.max = 2
             self.min = -2
@@ -53,12 +53,12 @@ def InitModuleProxy(plot_class):
         def get_sample_sets(self):
             return NormalizationDesignGroup.objects.using(self.db['name']).filter(
                 id__in=self.sample_sets
-            ).order_by("id")
+            )
 
         def get_biological_features(self):
             return BioFeature.objects.using(self.db['name']).filter(
                 id__in=self.biological_features
-            ).order_by("id")
+            )
 
         def get_biological_feature_names(self):
             return list(BioFeature.objects.using(self.db['name']).filter(id__in=self.biological_features).values_list('name', flat=True))
@@ -91,6 +91,8 @@ def InitModuleProxy(plot_class):
                 self.normalized_values = np.array([x[2] for x in values]).reshape(
                     bf_num, ss_num
                 )
+                self.biological_features = tuple(dict.fromkeys(np.array([x[0] for x in values])))
+                self.sample_sets = tuple(dict.fromkeys(np.array([x[1] for x in values])))
             return self.normalized_values
 
         def set_global_biofeatures(self, bf_local_ids):
@@ -100,7 +102,7 @@ def InitModuleProxy(plot_class):
                 if lid[0] != 'BioFeatureType':
                     raise Exception("You should provide valid Biological Feature ids")
                 bf_ids.append(int(lid[1]))
-            self.biological_features = bf_ids
+            self.biological_features = tuple(bf_ids)
 
         def set_global_samplesets(self, ss_local_ids):
             ss_ids = []
@@ -109,7 +111,7 @@ def InitModuleProxy(plot_class):
                 if lid[0] != 'SampleSetType':
                     raise Exception("You should provide valid Sample Set ids")
                 ss_ids.append(int(lid[1]))
-            self.sample_sets = ss_ids
+            self.sample_sets = tuple(ss_ids)
 
         def infer_biological_features(self, rank=None):
             cc = CompendiumConfig()

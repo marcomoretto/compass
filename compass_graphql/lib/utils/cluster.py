@@ -35,7 +35,7 @@ class Cluster:
         cc, c, i_uc, pdmc = self._optimal_h_clust(np.copy(self.data.T), max_nr_c, fail_tol_g, nan_frac, predef_obs)
         sorted_data = self.data[g]
         sorted_data = sorted_data[:, c]
-        return sorted_data, cg, cc
+        return sorted_data, cg, cc, g, c
 
     def _optimal_h_clust(self, data, max_nr_c, fail_tol, nan_frac, predef_obs):
         i_nan = (np.sum(np.isnan(data), axis=1) / data.shape[1]) > nan_frac
