@@ -209,7 +209,7 @@ class Query(object):
         max = kwargs.get('max', None)
 
         _p = m.get_plot(plot_type, sort_by=sort_by, alternative_coloring=alternative_coloring, min=min, max=max)
-        bf = [m.biological_features[i] for i in _p[1]]
+        bf = [m.biological_features[i] for i in _p[1]][::-1]
         bf_preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(bf)])
         bf_qs = BioFeature.objects.using(db['name']).filter(pk__in=bf).order_by(bf_preserved)
         ss = [m.sample_sets[i] for i in _p[2]]
