@@ -33,19 +33,16 @@ class Score:
             self.ss = [int(x) for x in ss]
         if bf:
             self.bf = [int(x) for x in bf]
-        if len(self.bf) == 0:
-            _v = pd.DataFrame(list(values.filter(normalization_design_group_id__in=self.ss)))
-            _v = _v.pivot_table(columns=_v.columns[1], index=_v.columns[0], values=_v.columns[2]).reset_index()
-            _v = _v.set_index(_v.columns[0])
-            _sv = _v.mean(axis=1).abs()
-            _sv = _sv[_sv > 2.0]
-            self.bf = list((_sv / _v.std(axis=1, ddof=1).loc[_sv.index]).sort_values().index[-3:])
 
     def rank_biological_features(self, method=RankMethods.UNCENTERED_CORRELATION):
         if method == Score.RankMethods.UNCENTERED_CORRELATION:
             df = self.values.pivot_table(columns=self.values.columns[1], index=self.values.columns[0],
                                         values=self.values.columns[2]).reset_index()
             df = df.set_index(df.columns[0])
+            if len(self.bf) == 0:
+                _sv = df.mean(axis=1).abs()
+                _sv = _sv[_sv > 2.0]
+                self.bf = list((_sv / df.std(axis=1, ddof=1).loc[_sv.index]).sort_values().index[-3:])
             profile = np.matlib.repmat(df.loc[self.bf].mean(axis=0), df.shape[0], 1)
             isnan = np.isnan(profile) | np.isnan(df)
             profile[isnan] = np.nan
