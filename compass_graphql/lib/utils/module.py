@@ -29,6 +29,7 @@ def InitModuleProxy(plot_class):
     class Module(plot_class):
 
         MAX_INFER_SAMPLE_SET = 300
+        MAX_INFER_BIOLOGICAL_FEATURE = 300
 
         def __init__(self, db, user, normalization=None, biological_features=tuple(), sample_sets=tuple()):
             self.db = db
@@ -117,13 +118,25 @@ def InitModuleProxy(plot_class):
             cc = CompendiumConfig()
             normalization_value_type = cc.get_normalized_value_name(self.db, self.normalization)
             value_type = ValueType.objects.using(self.db['name']).get(name=normalization_value_type)
-            NormalizedData.objects.using(self.compendium).filter(
+            normalization = Normalization.objects.using(self.db['name']).get(name=self.normalization)
+            values = NormalizedData.objects.using(self.db['name']).filter(
                 Q(
                     normalization_design_group__in=self.sample_sets
+                )  & Q(
+                    normalization_design_group__normalization_experiment__normalization=normalization
                 ) & Q(
                     value_type=value_type
                 )
+            ).order_by('normalization_design_group').values_list(
+                'bio_feature_id',
+                'normalization_design_group',
+                'value'
             )
+            score = Score(values, ss=self.sample_sets)
+            score_rank = Score.RankMethods.UNCENTERED_CORRELATION if rank is None else rank
+            rank = score.rank_biological_features(score_rank)
+            n_bio_features = min(Module.MAX_INFER_BIOLOGICAL_FEATURE, len(self.sample_sets) * 10)
+            self.biological_features = rank[:n_bio_features].index.tolist()
 
         def infer_sample_sets(self, rank=None):
             cc = CompendiumConfig()

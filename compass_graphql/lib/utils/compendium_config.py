@@ -2,6 +2,7 @@ import json
 import os
 from django.conf import settings
 import compass
+from command.lib.db.compendium.normalization import Normalization
 
 
 class CompendiumConfig:
@@ -13,6 +14,26 @@ class CompendiumConfig:
         for file in os.listdir(self.base_dir):
             if file.endswith('.json'):
                 self.compendia.append(json.loads(open(os.path.join(self.base_dir, file)).read()))
+
+        for c in self.compendia:
+            _v_to_remove = []
+            for v in c['versions']:
+                _d_to_remove = []
+                for d in v['databases']:
+                    norm = []
+                    for n in d['normalizations']:
+                        _n = Normalization.objects.using(d['name']).filter(name=n['name']).first()
+                        if not _n.is_public:
+                            continue
+                        norm.append(n['name'])
+                    if len(norm) == 0:
+                        _d_to_remove.append(d)
+                for _d in _d_to_remove:
+                    v['databases'].remove(_d)
+                if len(v['databases']) == 0:
+                    _v_to_remove.append(v)
+            for _v in _v_to_remove:
+                c['versions'].remove(_v)
 
     def get_plot_class(self, db, normalization):
         for n in db['normalizations']:
