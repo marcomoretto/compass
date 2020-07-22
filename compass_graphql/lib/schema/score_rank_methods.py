@@ -11,6 +11,7 @@ from command.lib.db.compendium.normalization_design_group import NormalizationDe
 from command.lib.db.compendium.normalized_data import NormalizedData
 from command.lib.db.compendium.value_type import ValueType
 from compass_graphql.lib.utils.compendium_config import CompendiumConfig
+from compass_graphql.lib.utils.compiled_normalized_data import CompiledNormalizedData
 from compass_graphql.lib.utils.score import Score
 
 from graphql_relay import from_global_id, to_global_id
@@ -86,8 +87,6 @@ class Query(object):
         )
         n = kwargs.get('normalization', db['default_normalization'])
         normalization = Normalization.objects.using(db['name']).get(name=n)
-        normalization_value_type = cc.get_normalized_value_name(db, normalization.name)
-        value_type = ValueType.objects.using(db['name']).get(name=normalization_value_type)
 
         bf_ids = [i for i in kwargs.get("biofeatures_ids", [])]
         ss_ids = [i for i in kwargs.get("sampleset_ids", [])]
@@ -108,20 +107,17 @@ class Query(object):
         _score_class = getattr(_module, _class)
         df = pd.DataFrame()
 
-        values = NormalizedData.objects.using(db['name']).filter(
-            Q(
-                normalization_design_group__normalization_experiment__normalization=normalization
-            ) & Q(
-                value_type=value_type
-            )
-        )
+        norm_basename = None
+        for n in db['normalizations']:
+            if n['name'] == normalization.name:
+                norm_basename = n['normalized_file_basename']
+                break
+        if not norm_basename:
+            raise Exception('Cannot find normalized values')
+        cnv = CompiledNormalizedData(n['normalized_file_basename'])
+
         if kwargs['rank_target'] == 'samplesets':
-            values = values.filter(Q(bio_feature__in=bf_ids))
-            values = values.order_by('normalization_design_group').values_list(
-                'bio_feature_id',
-                'normalization_design_group',
-                'value'
-            )
+            values = cnv.df.loc[[int(i) for i in bf_ids]]
             score = _score_class(values, bf_ids, ss_ids)
             if 'rank' in kwargs:
                 rank = score.rank_sample_sets(kwargs.get('rank', None))
@@ -136,12 +132,7 @@ class Query(object):
             df = df.set_index('gid')
             df.columns = ['value', 'name', 'type']
         elif kwargs['rank_target'] == 'biofeatures':
-            values = values.filter(Q(normalization_design_group_id__in=ss_ids))
-            values = values.order_by('normalization_design_group').values_list(
-                'bio_feature_id',
-                'normalization_design_group',
-                'value'
-            )
+            values = cnv.df[[int(i) for i in ss_ids]]
             score = _score_class(values, bf_ids, ss_ids)
             rank = score.rank_biological_features(kwargs['rank'])
             df = pd.DataFrame(rank)

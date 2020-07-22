@@ -28,7 +28,7 @@ class Score:
     def __init__(self, values, bf=None, ss=None):
         self.bf = []
         self.ss = []
-        self.values = pd.DataFrame(list(values))
+        self.values = values
         if ss:
             self.ss = [int(x) for x in ss]
         if bf:
@@ -36,9 +36,7 @@ class Score:
 
     def rank_biological_features(self, method=RankMethods.UNCENTERED_CORRELATION):
         if method == Score.RankMethods.UNCENTERED_CORRELATION:
-            df = self.values.pivot_table(columns=self.values.columns[1], index=self.values.columns[0],
-                                        values=self.values.columns[2]).reset_index()
-            df = df.set_index(df.columns[0])
+            df = self.values
             if len(self.bf) == 0:
                 _sv = df.mean(axis=1).abs()
                 _sv = _sv[_sv > 2.0]
@@ -71,8 +69,7 @@ class Score:
 
     def rank_sample_sets(self, method=RankMethods.MAGNITUDE):
         if method == Score.RankMethods.MAGNITUDE:
-            return self.values[2].groupby(self.values[1]).apply(lambda x: np.mean(abs(x))).sort_values(ascending=False)
+            return self.values.abs().mean(axis=0).sort_values(ascending=False)
         elif method == Score.RankMethods.COEXPRESSION:
-            group = self.values[2].groupby(self.values[1])
-            return ((group.mean().abs() - Score.AVG_THRESHOLD) / group.std()).sort_values(ascending=False)
+            return ((self.values.mean(axis=0).abs() - Score.AVG_THRESHOLD) / self.values.std(axis=0)).sort_values(ascending=False)
         return None

@@ -16,6 +16,7 @@ from command.lib.db.compendium.bio_feature import BioFeature
 from command.lib.db.compendium.normalization_design_group import NormalizationDesignGroup
 from compass_graphql.lib.utils.cluster import Cluster
 from compass_graphql.lib.utils.compendium_config import CompendiumConfig
+from compass_graphql.lib.utils.compiled_normalized_data import CompiledNormalizedData
 from compass_graphql.lib.utils.score import Score
 
 
@@ -286,24 +287,16 @@ class Plot:
         return fig, g, c
 
     def _plot_biofeatures_centered_correlation_distribution(self, rank_name):
-        cc = CompendiumConfig()
-        normalization = Normalization.objects.using(self.db['name']).get(name=self.normalization)
-        normalization_value_type = cc.get_normalized_value_name(self.db, normalization.name)
-        value_type = ValueType.objects.using(self.db['name']).get(name=normalization_value_type)
+        norm_basename = None
+        for n in self.db['normalizations']:
+            if n['name'] == self.normalization_name:
+                norm_basename = n['normalized_file_basename']
+                break
+        if not norm_basename:
+            raise Exception('Cannot find normalized values')
+        cnv = CompiledNormalizedData(n['normalized_file_basename'])
+        values = cnv.df[list(self.sample_sets)]
 
-        values = NormalizedData.objects.using(self.db['name']).filter(
-            Q(
-                normalization_design_group_id__in=self.sample_sets
-            ) & Q(
-                normalization_design_group__normalization_experiment__normalization=normalization
-            ) & Q(
-                value_type=value_type
-            )
-        ).order_by('normalization_design_group').values_list(
-            'bio_feature_id',
-            'normalization_design_group',
-            'value'
-        )
         score = Score(values, self.biological_features, self.sample_sets)
         rank = score.rank_biological_features(rank_name)
         rank = rank.replace([np.inf, -np.inf], np.nan)
@@ -346,23 +339,16 @@ class Plot:
         return fig, df
 
     def _plot_sample_sets_coexpression_distribution(self, rank_name):
-        cc = CompendiumConfig()
-        normalization = Normalization.objects.using(self.db['name']).get(name=self.normalization)
-        normalization_value_type = cc.get_normalized_value_name(self.db, normalization.name)
-        value_type = ValueType.objects.using(self.db['name']).get(name=normalization_value_type)
-        values = NormalizedData.objects.using(self.db['name']).filter(
-            Q(
-                bio_feature__in=self.biological_features
-            ) & Q(
-                normalization_design_group__normalization_experiment__normalization=normalization
-            ) & Q(
-                value_type=value_type
-            )
-        ).order_by('normalization_design_group').values_list(
-            'bio_feature_id',
-            'normalization_design_group',
-            'value'
-        )
+        norm_basename = None
+        for n in self.db['normalizations']:
+            if n['name'] == self.normalization_name:
+                norm_basename = n['normalized_file_basename']
+                break
+        if not norm_basename:
+            raise Exception('Cannot find normalized values')
+        cnv = CompiledNormalizedData(n['normalized_file_basename'])
+        values = cnv.df.loc[list(self.biological_features)]
+
         score = Score(values, self.biological_features, self.sample_sets)
         rank = score.rank_sample_sets(rank_name)
         rank = rank.replace([np.inf, -np.inf], np.nan)
@@ -407,23 +393,16 @@ class Plot:
         return fig, df
 
     def _plot_sample_sets_magnitude_distribution(self, rank_name):
-        cc = CompendiumConfig()
-        normalization = Normalization.objects.using(self.db['name']).get(name=self.normalization)
-        normalization_value_type = cc.get_normalized_value_name(self.db, normalization.name)
-        value_type = ValueType.objects.using(self.db['name']).get(name=normalization_value_type)
-        values = NormalizedData.objects.using(self.db['name']).filter(
-            Q(
-                bio_feature__in=self.biological_features
-            ) & Q(
-                normalization_design_group__normalization_experiment__normalization=normalization
-            ) & Q(
-                value_type=value_type
-            )
-        ).order_by('normalization_design_group').values_list(
-            'bio_feature_id',
-            'normalization_design_group',
-            'value'
-        )
+        norm_basename = None
+        for n in self.db['normalizations']:
+            if n['name'] == self.normalization_name:
+                norm_basename = n['normalized_file_basename']
+                break
+        if not norm_basename:
+            raise Exception('Cannot find normalized values')
+        cnv = CompiledNormalizedData(n['normalized_file_basename'])
+        values = cnv.df.loc[list(self.biological_features)].values
+
         score = Score(values, self.biological_features, self.sample_sets)
         rank = score.rank_sample_sets(rank_name)
         rank = rank.replace([np.inf, -np.inf], np.nan)

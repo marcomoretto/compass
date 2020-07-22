@@ -15,6 +15,7 @@ from command.lib.db.compendium.value_type import ValueType
 import numpy as np
 
 from compass_graphql.lib.utils.compendium_config import CompendiumConfig
+from compass_graphql.lib.utils.compiled_normalized_data import CompiledNormalizedData
 from compass_graphql.lib.utils.score import Score
 from compass_graphql.lib.db.module import Module as ModuleDB, Module
 
@@ -52,14 +53,16 @@ def InitModuleProxy(plot_class):
             return self.normalization_name
 
         def get_sample_sets(self):
-            return NormalizationDesignGroup.objects.using(self.db['name']).filter(
+            _ss = {ss.id:ss for ss in NormalizationDesignGroup.objects.using(self.db['name']).filter(
                 id__in=self.sample_sets
-            )
+            )}
+            return [_ss[i] for i in self.sample_sets]
 
         def get_biological_features(self):
-            return BioFeature.objects.using(self.db['name']).filter(
+            _bfs = {bf.id: bf for bf in BioFeature.objects.using(self.db['name']).filter(
                 id__in=self.biological_features
-            )
+            )}
+            return [_bfs[i] for i in self.biological_features]
 
         def get_biological_feature_names(self):
             return list(BioFeature.objects.using(self.db['name']).filter(id__in=self.biological_features).values_list('name', flat=True))
@@ -69,31 +72,17 @@ def InitModuleProxy(plot_class):
 
         def get_normalized_values(self):
             if self.normalized_values is None:
-                bf_num = len(self.biological_features)
-                ss_num = len(self.sample_sets)
-                cc = CompendiumConfig()
-                normalization_value_type = cc.get_normalized_value_name(self.db, self.normalization)
-                m_value_type = ValueType.objects.using(self.db['name']).get(name=normalization_value_type)
-                self.min = -8 #_min_max['value__min']
-                self.max = 8 #_min_max['value__max']
-                _norm_data = NormalizedData.objects.using(self.db['name']).filter(
-                    value_type=m_value_type,
-                    bio_feature_id__in=self.biological_features,
-                    normalization_design_group_id__in=self.sample_sets
-                )
-                values = list(_norm_data.order_by('bio_feature_id', 'normalization_design_group_id').values_list(
-                    'bio_feature_id', 'normalization_design_group_id', 'value')
-                )
-                values_ids = {(v[0], v[1]) for v in values}
-                missing_values = set(itertools.product(self.biological_features, self.sample_sets)) - values_ids
-                for mv in missing_values:
-                    values.append((mv[0], mv[1], np.NaN))
-                values.sort(key=lambda x: (x[0], x[1]))
-                self.normalized_values = np.array([x[2] for x in values]).reshape(
-                    bf_num, ss_num
-                )
-                self.biological_features = tuple(dict.fromkeys(np.array([x[0] for x in values])))
-                self.sample_sets = tuple(dict.fromkeys(np.array([x[1] for x in values])))
+                norm_basename = None
+                for n in self.db['normalizations']:
+                    if n['name'] == self.normalization_name:
+                        norm_basename = n['normalized_file_basename']
+                        break
+                if not norm_basename:
+                    raise Exception('Cannot find normalized values')
+                cnv = CompiledNormalizedData(n['normalized_file_basename'])
+                self.normalized_values = cnv.df[list(self.sample_sets)].loc[list(self.biological_features)].values
+                self.max = np.nanmax(cnv.df.values)
+                self.min = np.nanmin(cnv.df.values)
             return self.normalized_values
 
         def set_global_biofeatures(self, bf_local_ids):
@@ -115,23 +104,16 @@ def InitModuleProxy(plot_class):
             self.sample_sets = tuple(ss_ids)
 
         def infer_biological_features(self, rank=None):
-            cc = CompendiumConfig()
-            normalization_value_type = cc.get_normalized_value_name(self.db, self.normalization)
-            value_type = ValueType.objects.using(self.db['name']).get(name=normalization_value_type)
-            normalization = Normalization.objects.using(self.db['name']).get(name=self.normalization)
-            values = NormalizedData.objects.using(self.db['name']).filter(
-                Q(
-                    normalization_design_group__in=self.sample_sets
-                )  & Q(
-                    normalization_design_group__normalization_experiment__normalization=normalization
-                ) & Q(
-                    value_type=value_type
-                )
-            ).order_by('normalization_design_group').values_list(
-                'bio_feature_id',
-                'normalization_design_group',
-                'value'
-            )
+            norm_basename = None
+            for n in self.db['normalizations']:
+                if n['name'] == self.normalization_name:
+                    norm_basename = n['normalized_file_basename']
+                    break
+            if not norm_basename:
+                raise Exception('Cannot find normalized values')
+            cnv = CompiledNormalizedData(n['normalized_file_basename'])
+            values = cnv.df[list(self.sample_sets)]
+
             score = Score(values, ss=self.sample_sets)
             score_rank = Score.RankMethods.UNCENTERED_CORRELATION if rank is None else rank
             rank = score.rank_biological_features(score_rank)
@@ -139,23 +121,16 @@ def InitModuleProxy(plot_class):
             self.biological_features = rank[:n_bio_features].index.tolist()
 
         def infer_sample_sets(self, rank=None):
-            cc = CompendiumConfig()
-            normalization_value_type = cc.get_normalized_value_name(self.db, self.normalization)
-            value_type = ValueType.objects.using(self.db['name']).get(name=normalization_value_type)
-            normalization = Normalization.objects.using(self.db['name']).get(name=self.normalization)
-            values = NormalizedData.objects.using(self.db['name']).filter(
-                Q(
-                    bio_feature__in=self.biological_features
-                ) & Q(
-                    normalization_design_group__normalization_experiment__normalization=normalization
-                ) & Q(
-                    value_type=value_type
-                )
-            ).order_by('normalization_design_group').values_list(
-                'bio_feature_id',
-                'normalization_design_group',
-                'value'
-            )
+            norm_basename = None
+            for n in self.db['normalizations']:
+                if n['name'] == self.normalization_name:
+                    norm_basename = n['normalized_file_basename']
+                    break
+            if not norm_basename:
+                raise Exception('Cannot find normalized values')
+            cnv = CompiledNormalizedData(n['normalized_file_basename'])
+            values = cnv.df.loc[list(self.biological_features)]
+
             score = Score(values)
             score_rank = Score.RankMethods.MAGNITUDE if rank is None else rank
             rank = score.rank_sample_sets(score_rank)
