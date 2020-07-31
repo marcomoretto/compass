@@ -9,6 +9,11 @@ from command.lib.db.compendium.normalization import Normalization
 from command.lib.db.compendium.sample import Sample
 from compass_graphql.lib.utils.compendium_config import CompendiumConfig
 
+import operator
+from django.db.models import Q
+from functools import reduce
+from command.lib.db.compendium.ontology_node import OntologyNode
+
 
 class SampleAnnotationType(DjangoObjectType):
     class Meta:
@@ -28,7 +33,8 @@ class Query(object):
                                                      version=graphene.String(required=False),
                                                      database=graphene.String(required=False),
                                                      normalization=graphene.String(required=False),
-                                                     ontology_id=graphene.String())
+                                                     ontology_id=graphene.String(),
+                                                     annotation_term=graphene.String())
 
     def resolve_sample_annotations(self, info, **kwargs):
         cc = CompendiumConfig()
@@ -46,4 +52,7 @@ class Query(object):
         rs = SampleAnnotation.objects.using(db['name']).filter(sample_id__in=smp_ids)
         if 'ontology_id' in kwargs:
             return rs.filter(annotation__icontains=kwargs['ontology_id'])
+        if 'annotation_term' in kwargs:
+            ooids = [o.original_id for o in OntologyNode.objects.using(db['name']).filter(term_short_name__icontains=kwargs['annotation_term'])]
+            return rs.filter(reduce(operator.or_, (Q(annotation__icontains=x) for x in ooids)))
         return rs

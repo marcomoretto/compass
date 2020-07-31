@@ -140,7 +140,7 @@ class Query(object):
                         if type(s) == BNode:
                             subject = s
                         node = OntologyNode.objects.using(db['name']).filter(original_id=predicate).first()
-                        if node and 'rdf-syntax' not in p:
+                        if node and 'rdf-syntax' not in p and node.json:
                             predicate = OntologyFormat.get_formatter(node.ontology.name).format_predicate(node.json)
                         else:
                             predicate = OntologyFormat.Formatter().format_predicate(p)

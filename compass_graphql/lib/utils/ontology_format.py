@@ -48,6 +48,8 @@ class OntologyFormat(object):
     class UOFormatter(Formatter):
 
         def format_object(self, json_node):
+            if type(json_node) == list:
+                return [('name', json_node[0]['http://www.w3.org/2000/01/rdf-schema#label'][0]['@value'])]
             return [('name', json_node['http://www.w3.org/2000/01/rdf-schema#label'][0]['@value'])]
 
         def format_predicate(self, json_node):
