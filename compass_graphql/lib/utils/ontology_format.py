@@ -87,6 +87,9 @@ class OntologyFormat(object):
             elif 'http://www.w3.org/2002/07/owl#hasExactSynonym' in json_node[0]:
                 return json_node[0]['http://www.w3.org/2002/07/owl#hasExactSynonym'][0]['@value']
 
+    class GazetterFormatter(EFOFormatter):
+        pass
+
     class PTFormatter(EFOFormatter):
         pass
 
@@ -124,7 +127,8 @@ class OntologyFormat(object):
         'Ncbi taxon': TaxonFormatter,
         'Environment': EnvironmenFormatter,
         'Plant experimental conditions': PECOFormatter,
-        'Agronomy': AgroFormatter
+        'Agronomy': AgroFormatter,
+        'Gazetter': GazetterFormatter
     }
 
     @staticmethod
