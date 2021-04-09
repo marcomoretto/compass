@@ -42,7 +42,7 @@
                   "default_normalization": "limma",
                   "normalizations": [
                   {
-                      "name": "tpm_sample",
+                      "name": "tpm",
                       "normalized_value_name": "TPM",
                       "score_class": "compass_graphql.lib.utils.score.Score",
                       "plot_class": "compass_graphql.lib.utils.plot.Plot",
