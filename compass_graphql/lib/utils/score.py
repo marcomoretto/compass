@@ -37,7 +37,6 @@ class Score:
     def rank_biological_features(self, method=RankMethods.UNCENTERED_CORRELATION):
         if method == Score.RankMethods.UNCENTERED_CORRELATION:
             df = self.values
-            self.bf = []
             pos_idx = 2
             neg_idx = 2
             tot_idx = pos_idx + neg_idx
