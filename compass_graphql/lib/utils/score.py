@@ -37,10 +37,24 @@ class Score:
     def rank_biological_features(self, method=RankMethods.UNCENTERED_CORRELATION):
         if method == Score.RankMethods.UNCENTERED_CORRELATION:
             df = self.values
+            self.bf = []
+            pos_idx = 2
+            neg_idx = 2
+            tot_idx = pos_idx + neg_idx
             if len(self.bf) == 0:
                 _sv = df.mean(axis=1).abs()
                 _sv = _sv[_sv > 2.0]
-                self.bf = list((_sv / df.std(axis=1, ddof=1).loc[_sv.index]).sort_values().index[-3:])
+                _sv = (_sv / df.std(axis=1, ddof=1).loc[_sv.index]).sort_values(ascending=False).dropna()
+                for g in _sv.index:
+                    if df.loc[g].isnull().sum() <= np.round(len(df.columns) * 0.2):
+                        if df.loc[g].mean() >= 0 and pos_idx:
+                            pos_idx -= 1
+                            self.bf.append(g)
+                        elif df.loc[g].mean() < 0 and neg_idx:
+                            neg_idx -= 1
+                            self.bf.append(g)
+                    if len(self.bf) >= tot_idx:
+                        break
             profile = np.matlib.repmat(df.loc[self.bf].mean(axis=0), df.shape[0], 1)
             isnan = np.isnan(profile) | np.isnan(df)
             profile[isnan] = np.nan

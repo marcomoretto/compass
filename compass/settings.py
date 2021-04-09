@@ -101,8 +101,8 @@ DATABASES = {
         'NAME': 'expdata_vvini',
         'USER': 'command', #os.environ['COMPASS_DB_USER'],
         'PASSWORD': 'command', #os.environ['COMPASS_DB_PASS'],
-        'HOST': '172.22.0.3', #os.environ['COMPASS_DB_SERVICE'], #'jabberwocky', #
-        'PORT': os.environ['COMPASS_DB_PORT'],
+        'HOST': 'localhost', #os.environ['COMPASS_DB_SERVICE'], #'jabberwocky', #
+        'PORT': 15432,
         'COMPENDIUM': True,
     }
 }
