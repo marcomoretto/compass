@@ -17,7 +17,7 @@ COMPASS is meant to be the barebone interface on top of a `compendium database <
 
 .. note::
 
-   `DashCOMPASS <https://github.com/marcomoretto/dashcompass>`_ is a `Dash <https://dash.plotly.com/introduction>`_ applications built on top of COMPASS using `pyCOMPASS <https://pycompass.readthedocs.io>`_ meant to showcase how to build higher level tools.  A running instance is hosted on `Heroku <https://dashcompass.herokuapp.com/>`_.
+   `DashCOMPASS <https://github.com/marcomoretto/dashcompass>`_ is a `Dash <https://dash.plotly.com/introduction>`_ applications built on top of COMPASS using `pyCOMPASS <https://pycompass.readthedocs.io>`_ meant to showcase how to build higher level tools.  A running instance can be found on `http://compass.fmach.it/dashcompass <http://compass.fmach.it/dashcompass>`_.
 
 .. toctree::
    :maxdepth: 2
