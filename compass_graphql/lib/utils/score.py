@@ -82,7 +82,8 @@ class Score:
 
     def rank_sample_sets(self, method=RankMethods.MAGNITUDE):
         if method == Score.RankMethods.MAGNITUDE:
-            return self.values.abs().mean(axis=0).sort_values(ascending=False)
+            nan_allowed_fun = lambda x : np.exp(-x / 2)
+            return (self.values.abs().mean(axis=0) * np.isnan(self.values).sum(axis=0).apply(nan_allowed_fun)).sort_values(ascending=False)
         elif method == Score.RankMethods.COEXPRESSION:
             return ((self.values.mean(axis=0).abs() - Score.AVG_THRESHOLD) / self.values.std(axis=0)).sort_values(ascending=False)
         return None
