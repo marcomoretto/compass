@@ -92,10 +92,11 @@ class Query(object):
                                              version=graphene.String(required=False),
                                              database=graphene.String(required=False),
                                              normalization=graphene.String(required=False),
+                                             only_labels=graphene.Boolean(required=False),
                                              ids=graphene.List(required=True, of_type=graphene.ID)
                                              )
 
-    def resolve_annotation_pretty_print(self, info, ids, **kwargs):
+    def resolve_annotation_pretty_print(self, info, ids, only_labels=True, **kwargs):
         cc = CompendiumConfig()
         db = cc.get_db(
             kwargs['compendium'],
@@ -112,6 +113,7 @@ class Query(object):
                 for ann in _bf_class.objects.using(db['name']).get(id=_id).biofeatureannotation_set.all():
                     g = Graph().parse(data=json.dumps(ann.annotation), format='json-ld')
                     for s, p, o in g:
+                        subject = ann.bio_feature.name
                         predicate = (str(p).split('/') or None)[-1]
                         obj = (str(o).split('/') or None)[-1]
                         node = OntologyNode.objects.using(db['name']).filter(original_id=predicate).first()
@@ -119,13 +121,25 @@ class Query(object):
                             predicate = OntologyFormat.get_formatter(node.ontology.name).format_predicate(node.json)
                         node = OntologyNode.objects.using(db['name']).filter(original_id=obj).first()
                         if node:
-                            for k, v in OntologyFormat.get_formatter(node.ontology.name).format_object(node.json):
-                                triples.append(
-                                    (obj, k, v)
-                                )
-                        triples.append(
-                            (ann.bio_feature.name, predicate, obj)
-                        )
+                            if only_labels:
+                                for k, v in OntologyFormat.get_formatter(node.ontology.name).format_object(node.json):
+                                    triples.append(
+                                        (obj, k, v)
+                                    )
+                            else:
+                                _g = Graph().parse(data=json.dumps(node.json), format='json-ld')
+                                for _s, _p, _o in _g:
+                                    triples.append(
+                                        (str(_s), str(_p), str(_o))
+                                    )
+                        if only_labels:
+                            triples.append(
+                                (subject, predicate, obj)
+                            )
+                        else:
+                            triples.append(
+                                (subject, str(p), str(o))
+                            )
             elif _class == 'SampleType':
                 _module = importlib.import_module('command.lib.db.compendium.sample')
                 _bf_class = getattr(_module, 'Sample')
@@ -146,13 +160,25 @@ class Query(object):
                             predicate = OntologyFormat.Formatter().format_predicate(p)
                         node = OntologyNode.objects.using(db['name']).filter(original_id=obj).first()
                         if node:
-                            for k, v in OntologyFormat.get_formatter(node.ontology.name).format_object(node.json):
-                                triples.append(
-                                    (obj, k, v)
-                                )
-                        triples.append(
-                            (subject, predicate, obj)
-                        )
+                            if only_labels:
+                                for k, v in OntologyFormat.get_formatter(node.ontology.name).format_object(node.json):
+                                    triples.append(
+                                        (obj, k, v)
+                                    )
+                            else:
+                                _g = Graph().parse(data=json.dumps(node.json), format='json-ld')
+                                for _s, _p, _o in _g:
+                                    triples.append(
+                                        (str(_s), str(_p), str(_o))
+                                    )
+                        if only_labels:
+                            triples.append(
+                                (subject, predicate, obj)
+                            )
+                        else:
+                            triples.append(
+                                (subject, str(p), str(o))
+                            )
 
 
         return triples

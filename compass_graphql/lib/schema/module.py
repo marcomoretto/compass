@@ -65,8 +65,12 @@ class Query(object):
 
         m = module_proxy_class(db, info.context.user, n)
         if "biofeatures_ids" in kwargs:
+            if len(set(kwargs["biofeatures_ids"])) < len(list(kwargs["biofeatures_ids"])):
+                raise Exception('You have duplicated biofeature ids!')
             m.set_global_biofeatures(kwargs["biofeatures_ids"])
         if "sampleset_ids" in kwargs:
+            if len(set(kwargs["sampleset_ids"])) < len(list(kwargs["sampleset_ids"])):
+                raise Exception('You have duplicated sampleset ids!')
             m.set_global_samplesets(kwargs["sampleset_ids"])
         if len(m.biological_features) == 0:
             m.infer_biological_features(rank)

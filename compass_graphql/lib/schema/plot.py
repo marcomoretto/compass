@@ -193,6 +193,8 @@ class Query(object):
             kwargs.get('database', None)
         )
         n = get_normalization_name_from_sample_set_id(db, from_global_id(kwargs["sampleset_ids"][0])[1])
+        if n not in [n['name'] for n in db['normalizations']]:
+            raise Exception('The sample sets you requested are for a different normalization then the requested one ' + n)
         plot_class = cc.get_plot_class(db, n)
         _module = importlib.import_module('.'.join(plot_class.split('.')[:-1]))
         _class = plot_class.split('.')[-1]

@@ -63,18 +63,18 @@ class Query(object):
         g = Graph('Sleepycat', identifier=kwargs['target'])
         g.open(g_path, create=False)
         valid_samples = Sample.objects.using(db['name']).filter(id__in=smp_ids)
+        bf_ids = set(BioFeature.objects.using(db['name']).all().values_list('id', flat=True))
+        s_ids = set(valid_samples.all().values_list('id', flat=True))
         for x in g.query(kwargs['query']):
             triple = []
             for t in x:
                 if type(t) == Literal and t.datatype == RDF.ID:
                     if kwargs['target'] == 'sample':
-                        s = valid_samples.filter(id=str(t)).first()
-                    else:
-                        s = BioFeature.objects.using(db['name']).filter(id=str(t)).first()
-                    if s and kwargs['target'] == 'sample':
-                        triple.append(to_global_id('SampleType', s.id))
-                    elif s and kwargs['target'] == 'biofeature':
-                        triple.append(to_global_id('BioFeatureType', s.id))
+                        if int(str(t)) in  s_ids:
+                            triple.append(to_global_id('SampleType', int(str(t))))
+                    elif kwargs['target'] == 'biofeature':
+                        if int(str(t)) in bf_ids:
+                            triple.append(to_global_id('BioFeatureType', int(str(t))))
                     else:
                         triple.append(None)
                 else:
