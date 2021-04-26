@@ -72,9 +72,13 @@ class Query(object):
                     if kwargs['target'] == 'sample':
                         if int(str(t)) in  s_ids:
                             triple.append(to_global_id('SampleType', int(str(t))))
+                        else:
+                            triple.append(None)
                     elif kwargs['target'] == 'biofeature':
                         if int(str(t)) in bf_ids:
                             triple.append(to_global_id('BioFeatureType', int(str(t))))
+                        else:
+                            triple.append(None)
                     else:
                         triple.append(None)
                 else:
