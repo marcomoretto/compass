@@ -1,3 +1,4 @@
+import importlib
 import re
 
 import graphene
@@ -49,9 +50,35 @@ class SampleSetType(DjangoObjectType):
         connection_class = SampleSetConnection
 
     normalization = graphene.String()
+    short_annotation_description = graphene.String()
 
     def resolve_normalization(self, info, **kwargs):
         return self.normalization_experiment.normalization.name
+
+    def resolve_short_annotation_description(self, info, **kwargs):
+        cc = CompendiumConfig()
+        compendium = None
+        version = None
+        database = None
+        normalization_name = self.normalization_experiment.normalization.name
+        for a in info.operation.selection_set.selections[0].arguments:
+            if a.name.value == 'compendium':
+                compendium = a.value.value
+            elif a.name.value == 'version':
+                version = a.value.value
+            elif a.name.value == 'database':
+                database = a.value.value
+        db = cc.get_db(
+            compendium,
+            version,
+            database
+        )
+        ann_desc_class = cc.get_annotation_description_class(db, normalization_name)
+        _module = importlib.import_module('.'.join(ann_desc_class.split('.')[:-1]))
+        _class = ann_desc_class.split('.')[-1]
+        _ann_desc_class = getattr(_module, _class)
+
+        return _ann_desc_class.get_sampleset_short_annotation_description(db, self)
 
 
 class Query(object):

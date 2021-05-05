@@ -2,15 +2,60 @@ import importlib
 
 import graphene
 from graphene import ObjectType
+from graphene.types.resolver import dict_resolver
 from graphene_django import DjangoObjectType
 from graphene_django.filter import DjangoFilterConnectionField
 from graphql_jwt.decorators import login_required
 from graphql_relay import from_global_id
 
+from command.lib.db.compendium.sample import Sample
+
+from command.lib.db.compendium.ontology_node import OntologyNode
 from compass_graphql.lib.schema.bio_feature import BioFeatureType
+from compass_graphql.lib.schema.sample import SampleType
 from compass_graphql.lib.schema.sample_set import SampleSetType
 from compass_graphql.lib.utils.compendium_config import CompendiumConfig
 from compass_graphql.lib.utils.module import InitModuleProxy, get_normalization_name_from_sample_set_id
+
+
+class SampleDescriptionSummaryCategory(ObjectType):
+    class Meta:
+        default_resolver = dict_resolver
+
+    original_id = graphene.String()
+    term_short_name = graphene.String()
+    samples = graphene.List(of_type=SampleType)
+
+
+class SampleDescriptionSummary(ObjectType):
+    class Meta:
+        default_resolver = dict_resolver
+
+    category = graphene.String()
+    details = graphene.List(SampleDescriptionSummaryCategory)
+
+
+class AnnotationEnrichmentOntologyTerm(ObjectType):
+    class Meta:
+        default_resolver = dict_resolver
+
+    ontology_id = graphene.String()
+    description = graphene.String()
+    p_value = graphene.Float()
+
+
+class AnnotationEnrichment(ObjectType):
+    class Meta:
+        default_resolver = dict_resolver
+
+    ontology = graphene.String()
+    ontology_term = graphene.List(AnnotationEnrichmentOntologyTerm)
+
+    def resolve_ontology(self, info, **kwargs):
+        return self['ontology']
+
+    def resolve_ontology_term(self, info, **kwargs):
+        return self['ontology_term']
 
 
 class ProxyModuleType(ObjectType):
@@ -20,6 +65,75 @@ class ProxyModuleType(ObjectType):
     sample_sets = DjangoFilterConnectionField(SampleSetType,
                                               compendium=graphene.String(),
                                               samples=graphene.List(of_type=graphene.ID))
+    samples_description_summary = graphene.List(SampleDescriptionSummary,
+                                                categories=graphene.List(graphene.String))
+    biofeature_annotation_enrichment = graphene.List(AnnotationEnrichment,
+                                          corr_p_value_cutoff=graphene.Float())
+    sampleset_annotation_enrichment = graphene.List(AnnotationEnrichment,
+                                                     corr_p_value_cutoff=graphene.Float())
+
+    def resolve_sampleset_annotation_enrichment(self, info, **kwargs):
+        p_value = float(kwargs.get('corr_p_value_cutoff', 0.05))
+        ann_enrichment = self.get_annotation_enrichment(category='sample', p_value=p_value)
+
+        return [{
+                'ontology': k,
+                'ontology_term': [{
+                    'ontology_id': x,
+                    'description': y[0],
+                    'p_value': y[1]
+                } for x, y in v.items()]
+            } for k, v in ann_enrichment.items()]
+
+    def resolve_biofeature_annotation_enrichment(self, info, **kwargs):
+        p_value = float(kwargs.get('corr_p_value_cutoff', 0.05))
+        ann_enrichment = self.get_annotation_enrichment(category='biofeature', p_value=p_value)
+
+        return [{
+                'ontology': k,
+                'ontology_term': [{
+                    'ontology_id': x,
+                    'description': y[0],
+                    'p_value': y[1]
+                } for x, y in v.items()]
+            } for k, v in ann_enrichment.items()]
+
+    def resolve_samples_description_summary(self, info, **kwargs):
+        g = self.samples_annotation_graph()
+
+        summary = []
+        cc = CompendiumConfig()
+        ann_desc_class = cc.get_annotation_description_class(self.db, self.normalization_name)
+        _module = importlib.import_module('.'.join(ann_desc_class.split('.')[:-1]))
+        _class = ann_desc_class.split('.')[-1]
+        _ann_desc_class = getattr(_module, _class)
+
+        categories = kwargs.get('categories', _ann_desc_class.DEFAULT_CATEGORIES)
+        for _cat in categories:
+            cat = {}
+
+            query_cat = "SELECT ?s ?p ?o WHERE {?s ?p ?o FILTER(strends(str(?p), '" + _cat + "'))}"
+            _abs = str(g.absolutize(''))
+            for s, p, o in g.query(query_cat):
+                _id = str(s).replace(_abs, '')
+                _gt = str(o).split('/')[-1]
+                if '#' in _gt:
+                    _gt = _gt.split('#')[-1]
+                if not _id.isnumeric():
+                    continue
+                if _gt not in cat:
+                    cat[_gt] = set()
+                cat[_gt].add(_id)
+
+            _ont_map = dict(OntologyNode.objects.using(self.db['name']).filter(original_id__in=list(cat.keys())).values_list('original_id', 'term_short_name'))
+            for k, v in cat.items():
+                cat[k] = Sample.objects.using(self.db['name']).filter(id__in=v)
+            summary.append(
+                {'category': _cat,
+                 'details': [{'original_id': k, 'term_short_name': _ont_map.get(k, k), 'samples': v} for k, v in cat.items()]}
+            )
+
+        return summary
 
     def resolve_normalization(self, info, **kwargs):
         return self.normalization

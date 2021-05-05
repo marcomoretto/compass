@@ -35,6 +35,11 @@ class CompendiumConfig:
             for _v in _v_to_remove:
                 c['versions'].remove(_v)
 
+    def get_annotation_description_class(self, db, normalization):
+        for n in db['normalizations']:
+            if n['name'] == normalization:
+                return n['annot_description_class']
+
     def get_plot_class(self, db, normalization):
         for n in db['normalizations']:
             if n['name'] == normalization:

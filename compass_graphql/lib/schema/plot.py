@@ -53,33 +53,47 @@ class PlotType(ObjectType):
                 id = div.split('=')[1].split()[0].replace("'", "").replace('"', '')
                 js = '''
                     <script>
-                    var myDiv = document.getElementById('{div_id}');
-                    myDiv.on('plotly_relayout',
-                        function(eventdata) {{
-                            console.log(myDiv.id);
-                            var xRange = [eventdata['xaxis.range[0]'], eventdata['xaxis.range[1]']]
-                            var yRange = [eventdata['yaxis.range[0]'], eventdata['yaxis.range[1]']]
-                            var calcdata = myDiv.calcdata[1][0]
-                            var xInside = []
-                            var yInside = []
-                
-                            for (var i = 0; i < calcdata.trace.y.length; i++) {{
-                                var y = calcdata.y[i]
-                                if(y > yRange[0] && y < yRange[1]) {{
-                                    yInside.push(calcdata.trace.y[i])
+                                        
+                    function copyToClipboard(text) {{
+                        var dummy = document.createElement("textarea");
+                        document.body.appendChild(dummy);
+                        dummy.value = text;
+                        dummy.select();
+                        document.execCommand("copy");
+                        document.body.removeChild(dummy);
+                    }}
+                                        
+                    config = {{
+                        modeBarButtonsToAdd: [{{
+                            name: 'Get Module IDs',
+                            icon: Plotly.Icons['selectbox'], 
+                            click: function() {{                               
+                                var xRange = document.getElementById('{div_id}').layout.xaxis.range
+                                var yRange = document.getElementById('{div_id}').layout.yaxis.range
+                                var calcdata = document.getElementById('{div_id}').calcdata[1][0]
+                                var xInside = []
+                                var yInside = []
+                                
+                                for (var i = 0; i < calcdata.trace.y.length; i++) {{
+                                    var y = calcdata.y[i]
+                                    if(y > yRange[0] && y < yRange[1]) {{
+                                        yInside.push(calcdata.trace.y[i])
+                                    }}
                                 }}
-                            }}
-                            for (var i = 0; i < calcdata.trace.x.length; i++) {{
-                                var x = calcdata.x[i]
-                                if(x > xRange[0] && x < xRange[1]) {{
-                                    xInside.push(calcdata.trace.x[i])
+                                for (var i = 0; i < calcdata.trace.x.length; i++) {{
+                                    var x = calcdata.x[i]
+                                    if(x > xRange[0] && x < xRange[1]) {{
+                                        xInside.push(calcdata.trace.x[i])
+                                    }}
                                 }}
+                                alert('Biofeatures and SampleSets IDs copied into the clipboard!');
+                                var ids = JSON.stringify({{'sample_sets': xInside, 'biological_features': yInside}})
+                                copyToClipboard(ids)
                             }}
-                            console.log(
-                                JSON.stringify({{'sample_sets': xInside, 'biological_features': yInside}})
-                            )
-                        }}
-                    );
+                        }}] 
+                    }};
+                    
+                    Plotly.react(document.getElementById('{div_id}'), document.getElementById('{div_id}').data, document.getElementById('{div_id}').layout, config);
                     </script>'''.format(div_id=id)
             div = plotly + div + js
         return div
@@ -192,6 +206,7 @@ class Query(object):
             kwargs.get('version', None),
             kwargs.get('database', None)
         )
+        show_buttons = kwargs.get('show_menu_buttons', True)
         n = get_normalization_name_from_sample_set_id(db, from_global_id(kwargs["sampleset_ids"][0])[1])
         if n not in [n['name'] for n in db['normalizations']]:
             raise Exception('The sample sets you requested are for a different normalization then the requested one ' + n)
@@ -210,7 +225,7 @@ class Query(object):
         min = kwargs.get('min', None)
         max = kwargs.get('max', None)
 
-        _p = m.get_plot(plot_type, sort_by=sort_by, alternative_coloring=alternative_coloring, min=min, max=max)
+        _p = m.get_plot(plot_type, sort_by=sort_by, alternative_coloring=alternative_coloring, show_buttons=show_buttons, min=min, max=max)
         bf = [m.biological_features[i] for i in _p[1]][::-1]
         bf_preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(bf)])
         bf_qs = BioFeature.objects.using(db['name']).filter(pk__in=bf).order_by(bf_preserved)

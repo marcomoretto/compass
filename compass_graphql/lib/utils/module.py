@@ -1,3 +1,4 @@
+import importlib
 import itertools
 
 from django.conf import settings
@@ -13,7 +14,10 @@ from command.lib.db.compendium.normalized_data import NormalizedData
 from command.lib.db.compendium.value_type import ValueType
 
 import numpy as np
+from rdflib import Graph
+import json
 
+from compass_graphql.lib.utils.annotation_enrichment import BioFeatureAnnotationEnrichment, SampleAnnotationEnrichment
 from compass_graphql.lib.utils.compendium_config import CompendiumConfig
 from compass_graphql.lib.utils.compiled_normalized_data import CompiledNormalizedData
 from compass_graphql.lib.utils.score import Score
@@ -52,6 +56,43 @@ def InitModuleProxy(plot_class):
                     self.normalization_name = sample_set.normalization_experiment.normalization.name
             return self.normalization_name
 
+        def biofeature_annotation_graph(self):
+            _bf = BioFeature.objects.using(self.db['name']).filter(id__in=self.biological_features)
+            g = Graph()
+            for b in _bf:
+                for ann in b.biofeatureannotation_set.all():
+                    g.parse(data=json.dumps(ann.annotation), format='json-ld')
+            return g
+
+        def samples_annotation_graph(self):
+            _ss = NormalizationDesignGroup.objects.using(self.db['name']).filter(id__in=self.sample_sets)
+            g = Graph()
+            for ss in _ss:
+                for sample in ss.normalizationdesignsample_set.all():
+                    for ann in sample.sample.sampleannotation_set.all():
+                        g.parse(data=json.dumps(ann.annotation), format='json-ld')
+            return g
+
+        def get_annotation_enrichment(self, category='biofeature', p_value=0.05):
+            cc = CompendiumConfig()
+            ann_desc_class = cc.get_annotation_description_class(self.db, self.normalization_name)
+            _module = importlib.import_module('.'.join(ann_desc_class.split('.')[:-1]))
+            _class = ann_desc_class.split('.')[-1]
+            _ann_desc_class = getattr(_module, _class)
+
+            annot_enrich = {}
+            if category == 'biofeature':
+                for cat, term_prefix in _ann_desc_class.BIOFEATURE_ENRICHMENT_CATEGORIES.items():
+                    ae = BioFeatureAnnotationEnrichment(self.db, cat, term_prefix)
+                    annot_enrich[cat] = ae.get_enrichment([bf.id for bf in self.get_biological_features()], p_value)
+            elif category == 'sample':
+                for cat, term_prefix in _ann_desc_class.SAMPLESET_ENRICHMENT_CATEGORIES.items():
+                    ae = SampleAnnotationEnrichment(self.db, cat, term_prefix)
+                    samples_ids =sorted(list(set([ns.sample.id for ss in self.get_sample_sets() for ns in ss.normalizationdesignsample_set.all()])))
+                    annot_enrich[cat] = ae.get_enrichment(samples_ids, p_value)
+
+            return annot_enrich
+
         def get_sample_sets(self):
             _ss = {ss.id:ss for ss in NormalizationDesignGroup.objects.using(self.db['name']).filter(
                 id__in=self.sample_sets
@@ -65,10 +106,34 @@ def InitModuleProxy(plot_class):
             return [_bfs[i] for i in self.biological_features]
 
         def get_biological_feature_names(self):
-            return list(BioFeature.objects.using(self.db['name']).filter(id__in=self.biological_features).values_list('name', flat=True))
+            return [bf.name for bf in self.get_biological_features()]
 
         def get_sample_set_names(self):
-            return list(NormalizationDesignGroup.objects.using(self.db['name']).filter(id__in=self.sample_sets).values_list('name', flat=True))
+            return [ss.name for ss in self.get_sample_sets()]
+
+        def get_biological_feature_ids(self):
+            return [bf.id for bf in self.get_biological_features()]
+
+        def get_sample_set_ids(self):
+            return [ss.id for ss in self.get_sample_sets()]
+
+        def get_experiments_access_id(self):
+            exp_acc_ids = []
+            for ss in self.get_sample_sets():
+                exps = set()
+                for s in ss.normalizationdesignsample_set.all():
+                    exps.add(s.sample.experiment.experiment_access_id)
+                exp_acc_ids.append(','.join(list(exps)))
+            return exp_acc_ids
+
+        def get_platforms_access_id(self):
+            plt_acc_ids = []
+            for ss in self.get_sample_sets():
+                plts = set()
+                for s in ss.normalizationdesignsample_set.all():
+                    plts.add(s.sample.platform.platform_access_id)
+                plt_acc_ids.append(','.join(list(plts)))
+            return plt_acc_ids
 
         def get_normalized_values(self):
             if self.normalized_values is None:

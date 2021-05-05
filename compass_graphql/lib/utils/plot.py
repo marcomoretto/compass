@@ -1,3 +1,5 @@
+import json
+
 import plotly.graph_objs as go
 import plotly.figure_factory as ff
 import numpy as np
@@ -164,14 +166,15 @@ class Plot:
             [0.85, 'rgb(255, 0, 0)'],
             [1.0, 'rgb(255, 0, 0)'],
         ]
-        if alternative_coloring:
-            colorscale = [
+        alternative_colorscale = [
                 [0, 'rgb(255, 255, 0)'],
                 [0.15, 'rgb(255, 255, 0)'],
                 [0.5, 'rgb(0, 0, 0)'],
                 [0.85, 'rgb(0, 255, 255)'],
                 [1, 'rgb(0, 255, 255)'],
             ]
+        if alternative_coloring:
+            colorscale = alternative_colorscale
 
         min = min if min else self.min
         max = max if max else self.max
@@ -181,8 +184,12 @@ class Plot:
         d = np.array(_data)
         d = np.isnan(d).astype(int)
 
+        bf_ids = self.get_biological_feature_ids()
+        ss_ids = self.get_sample_set_ids()
         bf_names = self.get_biological_feature_names()
         ss_names = self.get_sample_set_names()
+        exp_names = self.get_experiments_access_id()
+        plt_names = self.get_platforms_access_id()
 
         hovertext = list()
         for yi, yy in enumerate(g):
@@ -191,8 +198,8 @@ class Plot:
                 hovertext[-1].append('Sample set: {}<br /> ' \
                                      'Bio feature: {}<br /> ' \
                                      'Value: {} <br />' \
-                                     'Sample set annotation: {} <br />' \
-                                     'Bio feature annotation: {}'.format(ss_names[xx], bf_names[yy], _data[yi][xi], 'anno', 'anno'))
+                                     'Experiments: {} <br />' \
+                                     'Platformss: {}'.format(ss_names[xx], bf_names[yy], _data[yi][xi], exp_names[xx], plt_names[xx]))
 
         cell_ratio = _data.shape[0] / _data.shape[1]
 
@@ -237,8 +244,8 @@ class Plot:
 
         trace = go.Heatmap(
                 z=_data,
-                x=ss_names,
-                y=bf_names,
+                x=[to_global_id('SampleSetType', ss_ids[i]) for i in c],
+                y=[to_global_id('BioFeatureType', bf_ids[i]) for i in g],
                 colorscale=colorscale,
                 showlegend=False,
                 hoverinfo='text',

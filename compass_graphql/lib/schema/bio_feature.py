@@ -8,6 +8,9 @@ from graphene_django.filter import DjangoFilterConnectionField
 from graphene_django.types import DjangoObjectType
 from graphql_relay import from_global_id
 import re
+import operator
+from django.db.models import Q
+from functools import reduce
 
 from compass_graphql.lib.utils.compendium_config import CompendiumConfig
 
@@ -47,7 +50,7 @@ class BioFeatureType(DjangoObjectType):
         model = BioFeature
         filter_fields = {
             'id': ['exact'],
-            'name': ['exact', 'icontains', 'istartswith', 'in'],
+            'name': ['exact', 'icontains', 'istartswith'],
             'description': ['exact', 'icontains'],
         }
         interfaces = (graphene.relay.Node,)
@@ -59,7 +62,8 @@ class Query(object):
                                               version=graphene.String(required=False),
                                               database=graphene.String(required=False),
                                               normalization=graphene.String(required=False),
-                                              id__in=graphene.ID())
+                                              id__in=graphene.ID(),
+                                              name__in=graphene.String())
 
 
     def resolve_biofeatures(self, info, **kwargs):
@@ -72,4 +76,6 @@ class Query(object):
         rs = BioFeature.objects.using(db['name']).all()
         if 'id__in' in kwargs:
             rs = rs.filter(id__in=[from_global_id(i)[1] for i in kwargs['id__in'].split(',')])
+        if 'name__in' in kwargs:
+            rs = rs.filter(reduce(operator.or_, (Q(name__contains=x) for x in kwargs['name__in'].split(','))))
         return rs
