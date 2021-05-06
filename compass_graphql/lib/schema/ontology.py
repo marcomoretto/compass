@@ -14,6 +14,7 @@ class OntologyType(DjangoObjectType):
 
         model = Ontology
         filter_fields = {
+            'id': ['exact', 'icontains', 'istartswith', 'in'],
             'name': ['exact', 'icontains', 'istartswith', 'in'],
         }
         interfaces = (graphene.relay.Node,)
