@@ -75,7 +75,13 @@ class Query(object):
         )
         rs = BioFeature.objects.using(db['name']).all()
         if 'id__in' in kwargs:
-            rs = rs.filter(id__in=[from_global_id(i)[1] for i in kwargs['id__in'].split(',')])
+            valid_ids = []
+            for i in kwargs['id__in'].split(','):
+                try:
+                    valid_ids.append(from_global_id(i)[1])
+                except Exception as e:
+                    pass
+            rs = rs.filter(id__in=valid_ids)
         if 'name__in' in kwargs:
             rs = rs.filter(reduce(operator.or_, (Q(name__contains=x) for x in kwargs['name__in'].split(','))))
         return rs

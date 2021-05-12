@@ -63,7 +63,13 @@ class Query(object):
             smp_ids.update(exp.experiment.sample_set.all().values_list('id', flat=True))
         qs = Sample.objects.using(db['name']).filter(id__in=smp_ids)
         if 'id__in' in kwargs:
-            qs = qs.filter(id__in=[from_global_id(i)[1] for i in kwargs['id__in'].split(',')])
+            valid_ids = []
+            for i in kwargs['id__in'].split(','):
+                try:
+                    valid_ids.append(from_global_id(i)[1])
+                except Exception as e:
+                    pass
+            qs = qs.filter(id__in=valid_ids)
         if sample_set:
             ss_id = from_global_id(sample_set)[1]
             qs = [s.sample for s in NormalizationDesignGroup.objects.using(kwargs['compendium']).get(id=ss_id).normalizationdesignsample_set.all()]

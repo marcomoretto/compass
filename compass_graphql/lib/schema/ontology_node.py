@@ -1,3 +1,5 @@
+import json
+
 import graphene
 from command.lib.db.compendium.ontology_node import OntologyNode
 from graphene.types.generic import GenericScalar
@@ -6,6 +8,10 @@ from graphene_django.types import DjangoObjectType
 from graphql_relay import from_global_id
 
 from command.lib.db.compendium.ontology_edge import OntologyEdge
+
+from command.lib.db.compendium.sample import Sample
+from rdflib import Graph
+
 from compass_graphql.lib.utils.compendium_config import CompendiumConfig
 
 
@@ -28,6 +34,8 @@ class Query(object):
                                                 version=graphene.String(required=False),
                                                 database=graphene.String(required=False),
                                                 normalization=graphene.String(required=False),
+                                                used_in_samples=graphene.List(graphene.ID),
+                                                used_in_biofeatures=graphene.List(graphene.ID),
                                                 ancestor_of=graphene.ID(),
                                                 descendant_of=graphene.ID())
 
@@ -39,6 +47,18 @@ class Query(object):
             kwargs.get('database', None)
         )
         rs = OntologyNode.objects.using(db['name']).all()
+        if 'used_in_samples' in kwargs:
+            sids = [from_global_id(i)[1] for i in kwargs['used_in_samples']]
+            samples = Sample.objects.using(db['name']).filter(id__in=sids)
+            g = Graph()
+            for sample in samples:
+                for ann in sample.sampleannotation_set.all():
+                    g.parse(data=json.dumps(ann.annotation), format='json-ld')
+            oids = set()
+            for s, p, o in g:
+                oids.add(p.split('/')[-1].split('#')[-1])
+                oids.add(o.split('/')[-1].split('#')[-1])
+            return rs.filter(original_id__in=oids)
         if 'ancestor_of' in kwargs:
             ancestors = []
             nid = from_global_id(kwargs['ancestor_of'])[1]
