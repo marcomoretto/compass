@@ -75,8 +75,10 @@ class Query(object):
             ss_ids = []
             for ss_id in sample_set__in:
                 ss_ids.append(from_global_id(ss_id)[1])
-            qs = [s.sample for s in
-                  NormalizationDesignGroup.objects.using(db['name']).get(id__in=ss_ids).normalizationdesignsample_set.all()]
+            sids = set()
+            for ndg in NormalizationDesignGroup.objects.using(db['name']).filter(id__in=ss_ids):
+                sids.update(set(ndg.normalizationdesignsample_set.all().values_list('sample__id', flat=True)))
+            qs = Sample.objects.using(db['name']).filter(id__in=sids)
         if sample_set:
             ss_id = from_global_id(sample_set)[1]
             qs = [s.sample for s in NormalizationDesignGroup.objects.using(db['name']).get(id=ss_id).normalizationdesignsample_set.all()]
