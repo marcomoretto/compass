@@ -72,7 +72,7 @@ class Query(object):
             qs = qs.filter(id__in=valid_ids)
         if sample_set:
             ss_id = from_global_id(sample_set)[1]
-            qs = [s.sample for s in NormalizationDesignGroup.objects.using(kwargs['compendium']).get(id=ss_id).normalizationdesignsample_set.all()]
+            qs = [s.sample for s in NormalizationDesignGroup.objects.using(db['name']).get(id=ss_id).normalizationdesignsample_set.all()]
         if annotation_ontology_id:
             qs = [s for s in Sample.objects.using(kwargs['compendium']) if s.sampleannotation_set.filter(
                 annotation__icontains=annotation_ontology_id).count() > 0]
