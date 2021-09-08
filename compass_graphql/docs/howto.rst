@@ -261,6 +261,26 @@ GET sample set by sample id
     }
 
 
+GET sample raw data
+-----------------------
+
+.. code-block:: javascript
+
+    {
+     rawData(compendium: "vespucci", sampleId: "U2FtcGxlVHlwZTox") {
+      values
+      valueTypes
+      biofeatureReporters
+      biofeatures {
+       edges {
+        node {
+         id
+        }
+       }
+      }
+     }
+    }
+
 GET biological feature by name
 ------------------------------
 
