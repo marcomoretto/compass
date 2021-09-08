@@ -68,7 +68,6 @@ class Query(object):
             sample = Sample.objects.using(db['name']).get(sample_name=kwargs['sample_name'])
         else:
             raise Exception('You need to provide a valid sample_id or a valid sample_name')
-
         rd = RawData.objects.using(db['name']).filter(
             Q(sample=sample)&
             Q(bio_feature_reporter__bio_feature__isnull=False))
