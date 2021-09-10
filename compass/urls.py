@@ -19,8 +19,14 @@ from graphene_django.views import GraphQLView
 from compass_graphql import views
 from compass_graphql.schema import schema
 
+class COMPASSGraphQLView(GraphQLView):
+    graphiql_template = 'compass_graphql/graphiql.html'
+
+
+graphql_view = COMPASSGraphQLView.as_view(graphiql=True, schema=schema)
+
 urlpatterns = [
     url(r'^$', views.home, name='home'),
-    url(r'^graphql', GraphQLView.as_view(graphiql=True, schema=schema)),
+    url(r'^graphql', graphql_view),
     url(r'^vespucci', views.vespucci, name='vespucci'),
 ]
