@@ -83,5 +83,5 @@ class Query(object):
                     pass
             rs = rs.filter(id__in=valid_ids)
         if 'name__in' in kwargs:
-            rs = rs.filter(reduce(operator.or_, (Q(name__contains=x) for x in kwargs['name__in'].split(','))))
+            rs = rs.filter(reduce(operator.or_, (Q(name__icontains=x) for x in kwargs['name__in'].split(','))))
         return rs
