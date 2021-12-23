@@ -1729,7 +1729,7 @@ var GraphiQL = exports.GraphiQL = function (_React$Component) {
     _this._storage = new _StorageAPI2.default(props.storage);
 
     // Determine the initial query to display.
-    var query = props.query !== undefined ? props.query : _this._storage.get('query') !== null ? _this._storage.get('query') : props.defaultQuery !== undefined ? props.defaultQuery : defaultQuery;
+    var query = defaultQuery;//props.query !== undefined ? props.query : _this._storage.get('query') !== null ? _this._storage.get('query') : props.defaultQuery !== undefined ? props.defaultQuery : defaultQuery;
 
     // Get the initial query facts.
     var queryFacts = (0, _getQueryFacts2.default)(props.schema, query);
@@ -2720,7 +2720,33 @@ GraphiQL.Footer = function GraphiQLFooter(props) {
   );
 };
 
-var defaultQuery = '# Welcome to GraphiQL\n#\n# GraphiQL is an in-browser tool for writing, validating, and\n# testing GraphQL queries.\n#\n# Type queries into this side of the screen, and you will see intelligent\n# typeaheads aware of the current GraphQL type schema and live syntax and\n# validation errors highlighted within the text.\n#\n# GraphQL queries typically start with a "{" character. Lines that starts\n# with a # are ignored.\n#\n# An example GraphQL query might look like:\n#\n#     {\n#       field(arg: "value") {\n#         subField\n#       }\n#     }\n#\n# Keyboard shortcuts:\n#\n#  Prettify Query:  Shift-Ctrl-P (or press the prettify button above)\n#\n#       Run Query:  Ctrl-Enter (or press the play button above)\n#\n#   Auto Complete:  Ctrl-Space (or just start typing)\n#\n\n';
+//var defaultQuery = '# Welcome to GraphiQL\n#\n# GraphiQL is an in-browser tool for writing, validating, and\n# testing GraphQL queries.\n#\n# Type queries into this side of the screen, and you will see intelligent\n# typeaheads aware of the current GraphQL type schema and live syntax and\n# validation errors highlighted within the text.\n#\n# GraphQL queries typically start with a "{" character. Lines that starts\n# with a # are ignored.\n#\n# An example GraphQL query might look like:\n#\n#     {\n#       field(arg: "value") {\n#         subField\n#       }\n#     }\n#\n# Keyboard shortcuts:\n#\n#  Prettify Query:  Shift-Ctrl-P (or press the prettify button above)\n#\n#       Run Query:  Ctrl-Enter (or press the play button above)\n#\n#   Auto Complete:  Ctrl-Space (or just start typing)\n#\n\n';
+var defaultQuery = '# Welcome to COMPASS GraphiQL\n#\n# COMPASS is the GraphQL interface for VESPUCCI the integrated gene\n# expression compendium.\n#\n#'
+    defaultQuery += ' GraphiQL is an in-browser tool for writing, validating, and\n# testing GraphQL queries.\n#\n#'
+    defaultQuery +=' Type queries into this side of the screen, and you will see intelligent\n#'
+    defaultQuery += ' typeaheads aware of the current GraphQL type schema and live syntax and\n#'
+    defaultQuery += ' validation errors highlighted within the text.\n#\n#'
+    defaultQuery += ' Keyboard shortcuts:\n#\n#  Prettify Query:  Shift-Ctrl-P (or press the prettify button above)\n#'
+    defaultQuery += '       Run Query:  Ctrl-Enter (or press the play button above)\n#   Auto Complete:  Ctrl-Space (or just start typing)\n#\n#'
+    defaultQuery += ' GraphQL queries typically start with a "{" character\n#'
+    defaultQuery += ' Lines that starts with a # are ignored.\n#\n# An example GraphQL query might look like:\n'
+    defaultQuery += '{\n'
+    defaultQuery += '  samples(compendium:"vespucci", first: 1) {\n'
+    defaultQuery += '    edges {\n'
+    defaultQuery += '      node {\n'
+    defaultQuery += '        sampleName,\n'
+    defaultQuery += '        description,\n'
+    defaultQuery += '        experiment {\n'
+    defaultQuery += '          experimentAccessId\n'
+    defaultQuery += '        }\n'
+    defaultQuery += '      }\n'
+    defaultQuery += '    }\n'
+    defaultQuery += '  }\n'
+    defaultQuery += '}\n#\n#'
+    defaultQuery += ' Query fields can be found in the Docs right panel. Full documentation is available at:\n#'
+    defaultQuery += '                       https://compass-.readthedocs.io/\n#\n#'
+    defaultQuery += ' The Dash Graphical User Interface is available at:\n#'
+    defaultQuery += '                       http://compass.fmach.it/dashcompass\n'
 
 // Duck-type promise detection.
 function isPromise(value) {
