@@ -2746,7 +2746,9 @@ var defaultQuery = '# Welcome to COMPASS GraphiQL\n#\n# COMPASS is the GraphQL i
     defaultQuery += ' Query fields can be found in the Docs right panel. Full documentation is available at:\n#'
     defaultQuery += '                       https://compass-.readthedocs.io/\n#\n#'
     defaultQuery += ' The Dash Graphical User Interface is available at:\n#'
-    defaultQuery += '                       http://compass.fmach.it/dashcompass\n'
+    defaultQuery += '                       http://compass.fmach.it/dashcompass\n#\n#'
+    defaultQuery += ' Examples and use cases using Python are available at:\n#'
+    defaultQuery += '                       https://vespucci.readthedocs.io/en/latest/use_cases.html\n'
 
 // Duck-type promise detection.
 function isPromise(value) {
