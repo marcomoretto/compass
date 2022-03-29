@@ -125,9 +125,8 @@ class Query(object):
                 rank = score.rank_sample_sets()
             df = pd.DataFrame(rank)
             df['gid'] = [to_global_id('SampleSetType', i) for i in df.index]
-            df['name'] = NormalizationDesignGroup.objects.using(db['name']).filter(
-                id__in=[i for i in df.index]
-            ).values_list('name', flat=True)
+            _names_dict = dict(NormalizationDesignGroup.objects.using(db['name']).filter(id__in=[i for i in df.index]).values_list('id', 'name'))
+            df['name'] = [_names_dict[i] for i in df.index]
             df['type'] = ['SampleSetType' for i in df.index]
             df = df.set_index('gid')
             df.columns = ['value', 'name', 'type']
@@ -137,9 +136,8 @@ class Query(object):
             rank = score.rank_biological_features(kwargs['rank'])
             df = pd.DataFrame(rank)
             df['gid'] = [to_global_id('BioFeatureType', i) for i in df.index]
-            df['name'] = BioFeature.objects.using(db['name']).filter(
-                id__in=[i for i in df.index]
-            ).values_list('name', flat=True)
+            _names_dict = dict(BioFeature.objects.using(db['name']).filter(id__in=[i for i in df.index]).values_list('id', 'name'))
+            df['name'] = [_names_dict[i] for i in df.index]
             df['type'] = ['BioFeatureType' for i in df.index]
             df = df.set_index('gid')
             df.columns = ['value', 'name', 'type']
