@@ -23,7 +23,7 @@ class CompendiumConfig:
                     norm = []
                     for n in d['normalizations']:
                         _n = Normalization.objects.using(d['name']).filter(name=n['name']).first()
-                        if not _n.is_public:
+                        if not _n or not _n.is_public:
                             continue
                         norm.append(n['name'])
                     if len(norm) == 0:

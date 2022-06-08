@@ -23,7 +23,7 @@
                       "score_class": "compass_graphql.lib.utils.score.Score",
                       "plot_class": "compass_graphql.lib.utils.plot.Plot",
                       "annot_description_class": "compass_graphql.lib.utils.annot.Description",
-                      "normalized_file_basename": "normalized_data/norm_legacy_1.0_M"
+                      "normalized_file_basename": "normalized_data/expdata_vvini/norm_legacy_1.0_M"
                   }
                   ]
               }
@@ -56,7 +56,38 @@
                       "score_class": "compass_graphql.lib.utils.score.Score",
                       "plot_class": "compass_graphql.lib.utils.plot.Plot",
                       "annot_description_class": "compass_graphql.lib.utils.annot.Description",
-                      "normalized_file_basename": "normalized_data/norm_limma_1.0_LogFC"
+                      "normalized_file_basename": "normalized_data/expdata_vvini/norm_limma_1.0_LogFC"
+                  }
+                  ]
+              }
+          ]
+      }, {
+          "version_number": 3.0,
+          "version_alias": "test",
+          "default_database": "vitis_vinifera_3",
+          "databases": [
+              {
+                  "name": "vitis_vinifera_3",
+                  "full_name": "Vitis vinifera",
+                  "description": "The Vitis vinifera gene expression compendium",
+                  "sample_annotation_path": "",
+                  "biofeature_annotation_path": "",
+                  "default_normalization": "limma",
+                  "normalizations": [
+                      {
+                      "name": "limma",
+                      "normalized_value_name": "LogFC",
+                      "score_class": "compass_graphql.lib.utils.score.Score",
+                      "plot_class": "compass_graphql.lib.utils.plot.Plot",
+                      "annot_description_class": "compass_graphql.lib.utils.annot.Description",
+                      "normalized_file_basename": "normalized_data/expdata_vvini_3/norm_limma_1.0_LogFC"
+                  },{
+                      "name": "tpm",
+                      "normalized_value_name": "TPM",
+                      "score_class": "compass_graphql.lib.utils.score.Score",
+                      "plot_class": "compass_graphql.lib.utils.plot.Plot",
+                      "annot_description_class": "compass_graphql.lib.utils.annot.Description",
+                      "normalized_file_basename": "normalized_data/expdata_vvini_3/norm_tpm_1.0_TPM"
                   }
                   ]
               }

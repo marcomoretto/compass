@@ -109,12 +109,20 @@ class PlotTypeDistribution(PlotType):
 class PlotTypeHeatmap(PlotType):
     sorted_biofeatures = graphene.List(BioFeatureType)
     sorted_samplesets = graphene.List(SampleSetType)
+    submodule_line_biofeatures = graphene.List(graphene.Int)
+    submodule_line_samplesets = graphene.List(graphene.Int)
 
     def resolve_sorted_biofeatures(self, info, **kwargs):
         return self[2]
 
     def resolve_sorted_samplesets(self, info, **kwargs):
         return self[3]
+
+    def resolve_submodule_line_biofeatures(self, info, **kwargs):
+        return self[4]
+
+    def resolve_submodule_line_samplesets(self, info, **kwargs):
+        return self[5]
 
 
 class Query(object):
@@ -232,7 +240,7 @@ class Query(object):
         ss = [m.sample_sets[i] for i in _p[2]]
         ss_preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ss)])
         ss_qs = NormalizationDesignGroup.objects.using(db['name']).filter(pk__in=ss).order_by(ss_preserved)
-        return _p[0], plot_type, bf_qs, ss_qs
+        return _p[0], plot_type, bf_qs, ss_qs, _p[3], _p[4]
 
     def resolve_plot_distribution(self, info, plot_type, **kwargs):
         if plot_type not in [p[0] for p in Plot.PlotType.PLOT_NAMES['distribution']]:

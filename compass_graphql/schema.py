@@ -20,6 +20,7 @@ import compass_graphql.lib.schema.annotation_pretty_print
 import compass_graphql.lib.schema.version
 import compass_graphql.lib.schema.sparql
 import compass_graphql.lib.schema.raw_data
+import compass_graphql.lib.schema.download_complete_compendium
 
 
 class Query(compass_graphql.lib.schema.data_source.Query,
@@ -42,6 +43,7 @@ class Query(compass_graphql.lib.schema.data_source.Query,
             compass_graphql.lib.schema.version.Query,
             compass_graphql.lib.schema.sparql.Query,
             compass_graphql.lib.schema.raw_data.Query,
+            compass_graphql.lib.schema.download_complete_compendium.Query,
             graphene.ObjectType):
     # This class will inherit from multiple Queries
     # as we begin to add more apps to our project

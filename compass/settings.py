@@ -104,6 +104,15 @@ DATABASES = {
         'HOST': 'localhost', #os.environ['COMPASS_DB_SERVICE'], #'jabberwocky', #
         'PORT': 15432,
         'COMPENDIUM': True,
+    },
+    'vitis_vinifera_3': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'expdata_vvini_3',
+        'USER': 'command', #os.environ['COMPASS_DB_USER'],
+        'PASSWORD': 'command', #os.environ['COMPASS_DB_PASS'],
+        'HOST': 'localhost', #os.environ['COMPASS_DB_SERVICE'], #'jabberwocky', #
+        'PORT': 15432,
+        'COMPENDIUM': True,
     }
 }
 

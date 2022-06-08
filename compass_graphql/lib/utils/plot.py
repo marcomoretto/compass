@@ -291,7 +291,7 @@ class Plot:
         )
 
         fig = go.Figure(data=[nantrace, trace], layout=layout)
-        return fig, g, c
+        return fig, g, c, g_counts, c_counts
 
     def _plot_biofeatures_centered_correlation_distribution(self, rank_name):
         norm_basename = None

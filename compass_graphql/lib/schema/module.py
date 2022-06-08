@@ -167,7 +167,7 @@ class Query(object):
         )
         if "sampleset_ids" in kwargs:
             n = get_normalization_name_from_sample_set_id(db, from_global_id(kwargs['sampleset_ids'][0])[1])
-            db = cc.get_db_from_normalization(n)
+            #db = cc.get_db_from_normalization(n)
         else:
             n = kwargs.get('normalization', db['default_normalization'])
         rank = kwargs['rank'] if 'rank' in kwargs else None
