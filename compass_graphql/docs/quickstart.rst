@@ -9,7 +9,7 @@ About GraphQL
 Simple query using the GraphiQL client
 --------------------------------------
 
-`GraphiQL <https://www.electronjs.org/apps/graphiql>`_ is a powerful GraphQL web client we are going to use in this documentation to show how to query a COMPASS GraphQL endpoint. The GraphiQL interface is the default way to query COMPASS and it is accessible at 'http://compass.fmach.it/graphql'.
+`GraphiQL <https://www.electronjs.org/apps/graphiql>`_ is a powerful GraphQL web client we are going to use in this documentation to show how to query a COMPASS GraphQL endpoint. The GraphiQL interface is the default way to query COMPASS and it is accessible at 'http://vespucci.fmach.it/compass'.
 
 .. _query_1:
 .. figure::  _static/graphi.png
@@ -23,7 +23,7 @@ Simple query using the GraphiQL client
       
       import requests
 
-      url = 'http://compass.fmach.it/graphql'
+      url = 'http://vespucci.fmach.it/compass'
       query = '''
         {
 		  compendia {
@@ -41,7 +41,7 @@ Simple query using the GraphiQL client
 		  }
 		}
       '''
-      request = requests.post('http://compass.fmach.it/graphql', json={'query': query})
+      request = requests.post('http://vespucci.fmach.it/compass', json={'query': query})
       print(request.json())
 
       
