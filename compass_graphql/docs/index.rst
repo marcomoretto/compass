@@ -20,7 +20,6 @@ COMPASS is meant to be the barebone interface on top of a `compendium database <
    :caption: Table of Contents
 
    quickstart
-   dashcompass
    howto
    deploy
 
